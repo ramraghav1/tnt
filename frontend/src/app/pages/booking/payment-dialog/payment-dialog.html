@@ -1,0 +1,102 @@
+<p-toast></p-toast>
+<p-dialog
+    [(visible)]="visible"
+    [modal]="true"
+    [closable]="step !== 'processing'"
+    [draggable]="false"
+    [style]="{ width: '480px' }"
+    [header]="'booking.payment.title' | translate"
+    (onShow)="onShow()"
+    (onHide)="onHide()"
+>
+    <!-- Step 1: Choose payment method -->
+    <div *ngIf="step === 'choose'" class="pay-content">
+        <!-- Amount Summary -->
+        <div class="pay-summary">
+            <div class="pay-summary-row">
+                <span>{{ 'booking.payment.bookingReference' | translate }}</span>
+                <span class="pay-ref">{{ bookingReference }}</span>
+            </div>
+            <div class="pay-summary-row">
+                <span>{{ 'booking.payment.subtotal' | translate }}</span>
+                <span>NPR {{ totalAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="pay-summary-row discount-row" *ngIf="discountAmount > 0">
+                <span>{{ 'booking.payment.discount' | translate }}</span>
+                <span class="discount-val">- NPR {{ discountAmount | number:'1.2-2' }}</span>
+            </div>
+            <div class="pay-divider"></div>
+            <div class="pay-summary-row pay-total-row">
+                <span>{{ 'booking.payment.totalPayable' | translate }}</span>
+                <span class="pay-total">NPR {{ grandTotal | number:'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- Payment Method Selection -->
+        <div class="pay-methods">
+            <h4 class="pay-methods-title">{{ 'booking.payment.selectPaymentMethod' | translate }}</h4>
+            <div class="pay-method-cards">
+                <div
+                    class="pay-method-card"
+                    [class.selected]="paymentMethod === 'qr'"
+                    (click)="paymentMethod = 'qr'"
+                >
+                    <i class="pi pi-qrcode"></i>
+                    <span>{{ 'booking.payment.qrPayment' | translate }}</span>
+                    <small>{{ 'booking.payment.scanAndPay' | translate }}</small>
+                </div>
+                <div
+                    class="pay-method-card"
+                    [class.selected]="paymentMethod === 'cash'"
+                    (click)="paymentMethod = 'cash'"
+                >
+                    <i class="pi pi-wallet"></i>
+                    <span>{{ 'booking.payment.cash' | translate }}</span>
+                    <small>{{ 'booking.payment.payAtCounter' | translate }}</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- QR Code Preview (shown when QR selected) -->
+        <div *ngIf="paymentMethod === 'qr'" class="qr-preview">
+            <div class="qr-frame">
+                <img [src]="qrImageUrl" [alt]="'booking.payment.qrCode' | translate" width="180" height="180" />
+            </div>
+            <div class="qr-account-info">
+                <p><strong>{{ accountName }}</strong></p>
+                <p>A/C: {{ accountNumber }}</p>
+                <p>{{ bankName }}</p>
+            </div>
+        </div>
+
+        <!-- Cash info -->
+        <div *ngIf="paymentMethod === 'cash'" class="cash-info">
+            <i class="pi pi-info-circle"></i>
+            <p [innerHTML]="'booking.payment.cashInfo' | translate"></p>
+        </div>
+
+        <!-- Action buttons -->
+        <div class="pay-actions">
+            <button pButton [label]="'booking.payment.cancel' | translate" icon="pi pi-times" class="p-button-text p-button-secondary" (click)="onHide()"></button>
+            <button pButton [label]="paymentMethod === 'qr' ? ('booking.payment.iHavePaid' | translate) : ('booking.payment.confirmCashPayment' | translate)" icon="pi pi-check" class="p-button-success" (click)="proceedPayment()"></button>
+        </div>
+    </div>
+
+    <!-- Step 2: Processing -->
+    <div *ngIf="step === 'processing'" class="pay-processing">
+        <p-progressSpinner [style]="{ width: '60px', height: '60px' }" strokeWidth="4"></p-progressSpinner>
+        <h3>{{ 'booking.payment.verifyingPayment' | translate }}</h3>
+        <p>{{ 'booking.payment.verifyingMessage' | translate }}</p>
+    </div>
+
+    <!-- Step 3: Success -->
+    <div *ngIf="step === 'success'" class="pay-success">
+        <div class="success-icon">
+            <i class="pi pi-check-circle"></i>
+        </div>
+        <h3>{{ 'booking.payment.paymentReceived' | translate }}</h3>
+        <p>{{ 'booking.payment.paymentConfirmed' | translate }} <strong>NPR {{ grandTotal | number:'1.2-2' }}</strong> {{ 'booking.payment.hasBeenConfirmed' | translate }}</p>
+        <p class="success-ref">{{ 'booking.payment.bookingReference' | translate }}: {{ bookingReference }}</p>
+        <button pButton [label]="'booking.payment.done' | translate" icon="pi pi-check" class="p-button-success" (click)="closeAndNotify()"></button>
+    </div>
+</p-dialog>

@@ -1,0 +1,366 @@
+<p-fluid>
+  <div class="flex flex-col gap-8">
+    <!-- Toast Notification -->
+    <div>
+      <p-toast></p-toast>
+      <p-confirmDialog></p-confirmDialog>
+    </div>
+
+    <!-- Loading Spinner -->
+    @if (loading) {
+      <div class="flex justify-center items-center py-12">
+        <p-progressSpinner strokeWidth="4" animationDuration="1s"></p-progressSpinner>
+      </div>
+    }
+
+    <!-- Form Content -->
+    @if (!loading) {
+      <div class="card flex flex-col gap-6">
+        <!-- Title -->
+        <div class="flex justify-between items-center">
+          <h2 class="text-2xl font-bold">Edit Itinerary</h2>
+          <p-button label="Back to List" (click)="confirmCancel()" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" size="small"></p-button>
+        </div>
+
+        <!-- Basic Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">Basic Information</div>
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>Title *</label>
+              <input pInputText [(ngModel)]="form.title" placeholder="Enter itinerary title" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>Duration (Days) *</label>
+              <input pInputText type="number" [(ngModel)]="form.durationDays" placeholder="Number of days" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>Difficulty Level</label>
+              <p-select [(ngModel)]="form.difficultyLevel" [options]="difficultyLevelOptions" optionLabel="label" optionValue="value" placeholder="Select difficulty" class="w-full"></p-select>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mt-6">
+            <label>Description</label>
+            <textarea pInputTextarea [(ngModel)]="form.description" placeholder="Enter description" rows="4" class="w-full"></textarea>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="my-2">
+
+        <!-- Pricing Mode Selection -->
+        <div>
+          <div class="font-semibold text-xl mb-4">Pricing Type</div>
+          <div class="pricing-mode-selector">
+            @for (mode of pricingModeOptions; track mode.value) {
+              <div class="pricing-mode-card" [class.pricing-mode-active]="form.pricingMode === mode.value" (click)="form.pricingMode = mode.value">
+                <p-radioButton [value]="mode.value" [(ngModel)]="form.pricingMode" [inputId]="'mode_' + mode.value" name="pricingMode"></p-radioButton>
+                <div class="pricing-mode-info">
+                  <label [for]="'mode_' + mode.value" class="pricing-mode-label">{{ mode.label }}</label>
+                  <span class="pricing-mode-desc">{{ mode.description }}</span>
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Overall Price Input (OVERALL mode) -->
+        @if (form.pricingMode === 'OVERALL') {
+          <div class="overall-price-section">
+            <div class="flex flex-col gap-2" style="max-width: 400px;">
+              <label class="font-semibold">Overall Itinerary Price (per person)</label>
+              <div class="flex items-center gap-2">
+                <span class="cost-currency">Rs.</span>
+                <input pInputText type="number" [(ngModel)]="form.overallPrice" placeholder="0" min="0" class="w-full" />
+              </div>
+            </div>
+          </div>
+        }
+
+        <!-- Daily Itinerary Section -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <div class="font-semibold text-xl">Daily Itinerary</div>
+            <div class="flex gap-2">
+              @if (form.days.length > 0) {
+                <p-button label="Expand All" (click)="expandAllDays()" icon="pi pi-angle-double-down" severity="info" [outlined]="true" size="small"></p-button>
+                <p-button label="Collapse All" (click)="collapseAllDays()" icon="pi pi-angle-double-up" severity="info" [outlined]="true" size="small"></p-button>
+              }
+              <p-button label="Add Day" (click)="addDay()" icon="pi pi-plus" severity="success"></p-button>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-4">
+            @for (day of form.days; track day.dayNumber; let i = $index) {
+              <div class="day-section" [class.day-collapsed]="collapsedDays[i]" [attr.data-day-index]="i">
+                <!-- Day Header (clickable to toggle) -->
+                <div class="day-header" (click)="toggleDay(i)">
+                  <div class="flex items-center gap-3">
+                    <span class="day-badge">{{ day.dayNumber }}</span>
+                    <span class="day-title">Day {{ day.dayNumber }}{{ day.title ? ': ' + day.title : '' }}</span>
+                    @if (day.location) {
+                      <span class="day-location"><i class="pi pi-map-marker"></i> {{ day.location }}</span>
+                    }
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <p-button icon="pi pi-trash" severity="danger" [outlined]="true" [rounded]="true" size="small" (click)="removeDay(i); $event.stopPropagation()"></p-button>
+                    <i class="day-toggle-icon pi" [class.pi-chevron-down]="collapsedDays[i]" [class.pi-chevron-up]="!collapsedDays[i]"></i>
+                  </div>
+                </div>
+
+                <!-- Day Content (collapsible) -->
+                @if (!collapsedDays[i]) {
+                  <div class="day-content">
+                    <div class="flex flex-col gap-6">
+                      <!-- First Row -->
+                      <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>Title</label>
+                          <input pInputText [(ngModel)]="day.title" placeholder="Day title" class="w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>Location</label>
+                          <input pInputText [(ngModel)]="day.location" placeholder="Location" class="w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>Accommodation</label>
+                          <input pInputText [(ngModel)]="day.accommodation" placeholder="Hotel/Resort name" class="w-full" />
+                        </div>
+                      </div>
+
+                      <!-- Description -->
+                      <div class="flex flex-col gap-2 w-full">
+                        <label>Description</label>
+                        <textarea pInputTextarea [(ngModel)]="day.description" placeholder="Describe the day's plan, highlights, and details..." rows="3" class="w-full"></textarea>
+                      </div>
+
+                      <!-- Second Row -->
+                      <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>Transport</label>
+                          <input pInputText [(ngModel)]="day.transport" placeholder="Transport mode" class="w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>Activities</label>
+                          <p-multiSelect [(ngModel)]="day.activities" [options]="activityOptions" optionLabel="label" optionValue="value" placeholder="Select activities" class="w-full"></p-multiSelect>
+                        </div>
+                      </div>
+
+                      <!-- Meals Section -->
+                      <div>
+                        <label class="block mb-3 font-semibold">Meals Included</label>
+                        <div class="flex gap-6">
+                          <div class="flex items-center">
+                            <p-checkbox [(ngModel)]="day.breakfastIncluded" binary class="mr-2"></p-checkbox>
+                            <label>Breakfast</label>
+                          </div>
+                          <div class="flex items-center">
+                            <p-checkbox [(ngModel)]="day.lunchIncluded" binary class="mr-2"></p-checkbox>
+                            <label>Lunch</label>
+                          </div>
+                          <div class="flex items-center">
+                            <p-checkbox [(ngModel)]="day.dinnerIncluded" binary class="mr-2"></p-checkbox>
+                            <label>Dinner</label>
+                          </div>
+                        </div>
+                      </div>
+
+                      <!-- Inventory Assignment Section -->
+                      <div>
+                        <label class="block mb-3 font-semibold">Inventory Assignment</label>
+                        <div class="flex flex-col gap-4">
+                          <!-- Guide Checkbox + Dropdown -->
+                          <div class="flex flex-col gap-2">
+                            <div class="flex items-center">
+                              <p-checkbox [(ngModel)]="day.guideNeeded" binary class="mr-2"></p-checkbox>
+                              <label class="font-medium"><i class="pi pi-user mr-1"></i> Guide Needed</label>
+                            </div>
+                            @if (day.guideNeeded) {
+                              <div class="ml-8">
+                                <p-select [(ngModel)]="day.guideId" [options]="guideOptions" optionLabel="label" optionValue="value" placeholder="Select a guide" class="w-full" [filter]="true" [showClear]="true"></p-select>
+                                @if (day.guideId && getSelectedGuide(day.guideId); as guide) {
+                                  <div class="mt-2 p-3 border-round surface-ground text-sm">
+                                    <div class="flex justify-between items-center">
+                                      <span class="font-semibold">{{ guide.fullName }}</span>
+                                      <span class="text-primary font-bold">Rs. {{ guide.pricePerDay }}/day</span>
+                                    </div>
+                                    @if (guide.specialization) {
+                                      <div class="text-color-secondary mt-1"><i class="pi pi-star mr-1"></i>{{ guide.specialization }}</div>
+                                    }
+                                    @if (guide.languages && guide.languages.length > 0) {
+                                      <div class="text-color-secondary mt-1"><i class="pi pi-globe mr-1"></i>{{ guide.languages.join(', ') }}</div>
+                                    }
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+
+                          <!-- Hotel Checkbox + Dropdown -->
+                          <div class="flex flex-col gap-2">
+                            <div class="flex items-center">
+                              <p-checkbox [(ngModel)]="day.hotelNeeded" binary class="mr-2"></p-checkbox>
+                              <label class="font-medium"><i class="pi pi-building mr-1"></i> Hotel Needed</label>
+                            </div>
+                            @if (day.hotelNeeded) {
+                              <div class="ml-8">
+                                <p-select [(ngModel)]="day.hotelId" [options]="hotelOptions" optionLabel="label" optionValue="value" placeholder="Select a hotel" class="w-full" [filter]="true" [showClear]="true"></p-select>
+                                @if (day.hotelId && getSelectedHotel(day.hotelId); as hotel) {
+                                  <div class="mt-2 p-3 border-round surface-ground text-sm">
+                                    <div class="flex justify-between items-center">
+                                      <span class="font-semibold">{{ hotel.name }}</span>
+                                      <span class="text-color-secondary">{{ hotel.location }}</span>
+                                    </div>
+                                    @if (hotel.starRating) {
+                                      <div class="mt-1">
+                                        @for (star of [].constructor(hotel.starRating); track $index) {
+                                          <i class="pi pi-star-fill text-yellow-500" style="font-size: 0.75rem;"></i>
+                                        }
+                                      </div>
+                                    }
+                                    @if (hotel.rooms && hotel.rooms.length > 0) {
+                                      <div class="mt-1 text-primary font-bold">
+                                        From Rs. {{ hotel.rooms[0].pricePerNight }}/night
+                                      </div>
+                                    }
+                                  </div>
+                                }
+                              </div>
+                            }
+                          </div>
+                        </div>
+
+                        <!-- Day Inventory Cost Summary -->
+                        @if (getDayInventoryCost(day) > 0) {
+                          <div class="mt-3 p-3 border-round surface-100 flex justify-between items-center">
+                            <span class="text-sm font-semibold"><i class="pi pi-box mr-1"></i> Day {{ day.dayNumber }} Inventory Cost:</span>
+                            <span class="text-primary font-bold">Rs. {{ getDayInventoryCost(day) }}</span>
+                          </div>
+                        }
+                      </div>
+
+                      <!-- DAILY mode: simple per-day cost -->
+                      @if (form.pricingMode === 'DAILY') {
+                        <div class="daily-cost-section">
+                          <label class="font-semibold text-sm">Day {{ day.dayNumber }} Cost (per person)</label>
+                          <div class="flex items-center gap-2 mt-2" style="max-width: 250px;">
+                            <span class="cost-currency">Rs.</span>
+                            <input pInputText type="number" [(ngModel)]="day.dailyCost" placeholder="0" min="0" class="w-full" />
+                          </div>
+                        </div>
+                      }
+
+                      <!-- DAILY_ACTIVITY mode: existing per-activity pricing -->
+                      @if (form.pricingMode === 'DAILY_ACTIVITY') {
+                      <!-- Pricing Toggle -->
+                      <div class="flex items-center gap-3">
+                        <p-button [label]="showPricing[i] ? 'Hide Pricing' : 'Set Price'"
+                                  (click)="togglePricing(i)"
+                                  [icon]="showPricing[i] ? 'pi pi-eye-slash' : 'pi pi-wallet'"
+                                  [severity]="showPricing[i] ? 'secondary' : 'info'"
+                                  [outlined]="true" size="small"></p-button>
+                        @if (getDayTotal(i) > 0) {
+                          <span class="text-sm" style="color: var(--p-primary-500);">
+                            <i class="pi pi-indian-rupee" style="font-size: 0.75rem;"></i> Day Total: Rs. {{ getDayTotal(i) }}
+                          </span>
+                        }
+                      </div>
+
+                      <!-- Pricing Section -->
+                      @if (showPricing[i]) {
+                        <div class="pricing-section">
+                          <div class="flex justify-between items-center mb-3">
+                            <label class="font-semibold text-sm">Cost Items (per person)</label>
+                            <p-button label="Add Custom" (click)="addCustomCost(i)" icon="pi pi-plus"
+                                      severity="info" [outlined]="true" size="small"></p-button>
+                          </div>
+                          <div class="cost-grid">
+                            @for (cost of day.costs; track $index; let ci = $index) {
+                              <div class="cost-row">
+                                <input pInputText [(ngModel)]="cost.name" placeholder="Item name" class="cost-name" />
+                                <div class="cost-price-wrap">
+                                  <span class="cost-currency">Rs.</span>
+                                  <input pInputText type="number" [(ngModel)]="cost.price" placeholder="0" class="cost-price" />
+                                </div>
+                                <p-button icon="pi pi-times" severity="danger" [text]="true" size="small"
+                                          (click)="removeCost(i, ci)"></p-button>
+                              </div>
+                            }
+                          </div>
+                          <div class="cost-total">
+                            <span>Day {{ day.dayNumber }} Total:</span>
+                            <span class="font-bold">Rs. {{ getDayTotal(i) }}</span>
+                          </div>
+                        </div>
+                      }
+                      } <!-- end DAILY_ACTIVITY -->
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Inventory Cost Summary -->
+        @if (getTotalInventoryCost() > 0) {
+          <div class="p-4 border-round surface-100 flex flex-col gap-3">
+            <div class="font-semibold text-lg"><i class="pi pi-box mr-2"></i>Inventory Cost Summary</div>
+            @for (day of form.days; track day.dayNumber; let i = $index) {
+              @if (getDayInventoryCost(day) > 0) {
+                <div class="flex justify-between items-center text-sm pl-4">
+                  <div>
+                    <span class="font-medium">Day {{ day.dayNumber }}</span>
+                    @if (day.guideNeeded && day.guideId && getSelectedGuide(day.guideId); as guide) {
+                      <span class="ml-2 text-color-secondary"><i class="pi pi-user mr-1"></i>{{ guide.fullName }}</span>
+                    }
+                    @if (day.hotelNeeded && day.hotelId && getSelectedHotel(day.hotelId); as hotel) {
+                      <span class="ml-2 text-color-secondary"><i class="pi pi-building mr-1"></i>{{ hotel.name }}</span>
+                    }
+                  </div>
+                  <span class="font-semibold">Rs. {{ getDayInventoryCost(day) }}</span>
+                </div>
+              }
+            }
+            <hr class="my-1">
+            <div class="flex justify-between items-center font-bold">
+              <span>Total Inventory Cost:</span>
+              <span class="text-primary text-lg">Rs. {{ getTotalInventoryCost() }}</span>
+            </div>
+          </div>
+        }
+
+        <!-- Grand Total -->
+        @if (getGrandTotal() > 0) {
+          <div class="grand-total-bar">
+            <span class="font-semibold">
+              @if (form.pricingMode === 'OVERALL') {
+                Overall Itinerary Price (per person):
+              } @else if (form.pricingMode === 'DAILY') {
+                Estimated Total Cost (per person):
+              } @else {
+                Estimated Total Cost (per person):
+              }
+            </span>
+            <span class="grand-total-amount">Rs. {{ getGrandTotal() }}</span>
+          </div>
+        }
+
+        <!-- Divider -->
+        <hr class="my-2">
+
+        <!-- Action Buttons -->
+        <div class="flex justify-end gap-3 mt-4">
+          <p-button label="Update Itinerary" (click)="confirmSave()" icon="pi pi-check" severity="success"></p-button>
+          <p-button label="Cancel" severity="secondary" (click)="confirmCancel()" icon="pi pi-times"></p-button>
+        </div>
+      </div>
+    }
+  </div>
+</p-fluid>

@@ -1,0 +1,30 @@
+.layout-main-container {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh;
+    justify-content: space-between;
+    padding: 6rem 2rem 0 2rem;
+    transition: margin-left var(--layout-section-transition-duration);
+}
+
+.layout-main {
+    flex: 1 1 auto;
+    padding-bottom: 2rem;
+}
+
+/* Itinerary Builder active: remove extra spacing, hide footer */
+body.itinerary-builder-active {
+    .layout-main-container {
+        padding: 4.5rem 0 0 0;
+        overflow: hidden;
+        height: 100vh;
+        min-height: unset;
+    }
+    .layout-main {
+        padding-bottom: 0;
+        overflow: hidden;
+    }
+    app-footer {
+        display: none;
+    }
+}

@@ -1,0 +1,36 @@
+:host {
+    display: block;
+}
+
+:host ::ng-deep {
+    .p-tag {
+        font-size: 0.75rem;
+    }
+
+    .p-select,
+    .p-inputnumber {
+        width: 100%;
+    }
+
+    .p-datatable .p-inputnumber,
+    .p-datatable .p-select {
+        min-width: 120px;
+    }
+
+    .p-datatable .p-inputtext {
+        width: 100%;
+    }
+
+    .uppercase input,
+    input.uppercase {
+        text-transform: uppercase;
+    }
+}
+
+.font-mono {
+    font-family: 'SF Mono', 'Fira Code', 'Consolas', monospace;
+}
+
+.line-through {
+    text-decoration: line-through;
+}

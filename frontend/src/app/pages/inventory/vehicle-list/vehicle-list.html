@@ -1,0 +1,81 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <div class="font-semibold text-xl">{{ 'inventory.vehicles' | translate }}</div>
+        <button pButton [label]="'inventory.addVehicle' | translate" icon="pi pi-plus" (click)="addNew()"></button>
+    </div>
+
+    <p-table
+        #dt
+        [value]="vehicles"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [globalFilterFields]="['model', 'registrationNumber', 'vehicleType']"
+        responsiveLayout="scroll"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [showGridlines]="true"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-column sm:flex-row">
+                <button pButton icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (click)="clear(dt)" [label]="'common.clear' | translate"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" [placeholder]="'inventory.searchVehicles' | translate" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="vehicleType">{{ 'inventory.vehicleType' | translate }} <p-sortIcon field="vehicleType"></p-sortIcon></th>
+                <th pSortableColumn="model">{{ 'inventory.model' | translate }} <p-sortIcon field="model"></p-sortIcon></th>
+                <th pSortableColumn="registrationNumber">{{ 'inventory.registrationNumber' | translate }} <p-sortIcon field="registrationNumber"></p-sortIcon></th>
+                <th pSortableColumn="capacity">{{ 'inventory.capacity' | translate }} <p-sortIcon field="capacity"></p-sortIcon></th>
+                <th pSortableColumn="pricePerDay">{{ 'inventory.pricePerDay' | translate }} <p-sortIcon field="pricePerDay"></p-sortIcon></th>
+                <th pSortableColumn="isActive">{{ 'inventory.status' | translate }} <p-sortIcon field="isActive"></p-sortIcon></th>
+                <th>{{ 'inventory.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-vehicle>
+            <tr>
+                <td>{{ vehicle.vehicleType }}</td>
+                <td>
+                    <strong>{{ vehicle.model }}</strong><br/>
+                    <small class="text-gray-500" *ngIf="vehicle.driverName">{{ 'inventory.driverName' | translate }}: {{ vehicle.driverName }}</small>
+                </td>
+                <td>{{ vehicle.registrationNumber }}</td>
+                <td>{{ vehicle.capacity }} {{ 'inventory.seats' | translate }}</td>
+                <td>
+                    <div>NPR {{ vehicle.pricePerDay }}</div>
+                    <small class="text-gray-500" *ngIf="vehicle.pricePerDayUsd">USD {{ vehicle.pricePerDayUsd }}</small>
+                    <small class="text-gray-500 ml-2" *ngIf="vehicle.pricePerDayInr">INR {{ vehicle.pricePerDayInr }}</small>
+                </td>
+                <td>
+                    <p-tag 
+                        [value]="vehicle.isActive ? ('inventory.active' | translate) : ('inventory.inactive' | translate)" 
+                        [severity]="getStatusSeverity(vehicle.isActive)"
+                    ></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-info" (click)="editVehicle(vehicle)" [pTooltip]="'inventory.edit' | translate"></button>
+                        <button *ngIf="vehicle.isActive" pButton icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="deleteVehicle(vehicle)" [pTooltip]="'inventory.delete' | translate"></button>
+                        <button *ngIf="!vehicle.isActive" pButton icon="pi pi-check" class="p-button-rounded p-button-outlined p-button-success" (click)="activateVehicle(vehicle)" [pTooltip]="'inventory.activate' | translate"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center">{{ 'inventory.noVehiclesFound' | translate }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

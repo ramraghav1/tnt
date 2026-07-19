@@ -1,0 +1,433 @@
+<p-toast></p-toast>
+
+<!-- ─── HEADER ──────────────────────────────────────────────────────── -->
+<div class="card mb-4">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <div class="font-semibold text-xl">{{ 'booking.manageBookings' | translate }}</div>
+            <div class="text-surface-500 text-sm mt-1">{{ 'booking.manageBookingsSubtitle' | translate }}</div>
+        </div>
+        <div class="flex gap-2 items-center">
+            <span *ngIf="selectedBookings.length > 0"
+                  class="px-3 py-1 rounded-full text-sm font-semibold"
+                  style="background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-card)); color: var(--primary-color); border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent);">
+                {{ selectedBookings.length }} booking(s) — {{ totalSelectedPersons }} person(s) selected
+            </span>
+            <p-button
+                icon="pi pi-calendar-plus"
+                label="Create / Assign Departure"
+                [disabled]="selectedBookings.length === 0"
+                (click)="openManageDialog(currentSelectedGroup ?? groups[0])"
+            ></p-button>
+            <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true"
+                      (click)="loadData()" [pTooltip]="'common.refresh' | translate"></p-button>
+        </div>
+    </div>
+</div>
+
+<!-- ─── LOADING ─────────────────────────────────────────────────────── -->
+<div *ngIf="loading" class="flex justify-center py-12">
+    <p-progressSpinner strokeWidth="4"></p-progressSpinner>
+</div>
+
+<!-- ─── EMPTY ────────────────────────────────────────────────────────── -->
+<div *ngIf="!loading && groups.length === 0" class="card text-center py-10 text-color-secondary">
+    <i class="pi pi-inbox text-4xl mb-2 block"></i>
+    <p>All bookings have been assigned to departures.</p>
+</div>
+
+<!-- ─── GROUPS ───────────────────────────────────────────────────────── -->
+<div *ngFor="let group of groups; let gi = index" class="card mb-4">
+
+    <!-- Group Header -->
+    <div class="flex justify-between items-center mb-3 flex-wrap gap-2">
+        <div>
+            <h3 class="text-lg font-semibold m-0 flex items-center gap-2">
+                <i class="pi pi-map text-blue-500"></i>
+                {{ group.itineraryTitle }}
+            </h3>
+            <small class="text-color-secondary">
+                {{ group.totalBookings }} booking(s) &bull; {{ group.totalPersons }} total person(s) unassigned
+                &bull; {{ getDateSubGroups(group).length }} departure date(s)
+            </small>
+        </div>
+        <div class="flex gap-2">
+            <p-button
+                [label]="isGroupFullySelected(group) ? 'Deselect All' : 'Select All'"
+                [severity]="isGroupFullySelected(group) ? 'secondary' : 'info'"
+                [outlined]="true"
+                size="small"
+                (click)="toggleAllInGroup(group)"
+            ></p-button>
+            <p-button
+                icon="pi pi-send"
+                label="Create Departure for Selected"
+                size="small"
+                [disabled]="!hasAnySelected(group)"
+                (click)="openManageDialog(group)"
+            ></p-button>
+        </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <!-- Single table per itinerary with date-separator rows -->
+    <p-table [value]="getTableRows(group)" responsiveLayout="scroll" [rowHover]="true">
+        <ng-template pTemplate="header">
+            <tr>
+                <th style="width:50px"></th>
+                <th>Booking Ref</th>
+                <th>Lead Traveler</th>
+                <th>Dates</th>
+                <th style="width:90px">Persons</th>
+                <th style="width:110px">Status</th>
+                <th style="width:110px">Payment</th>
+                <th style="width:110px">Amount</th>
+                <th style="width:60px">Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-row>
+            <!-- Date separator row -->
+            <tr *ngIf="row.type === 'date-header'"
+                style="background: color-mix(in srgb, var(--primary-color) 8%, var(--surface-card));">
+                <td style="border-bottom: none;">
+                    <p-checkbox
+                        [ngModel]="isDateGroupFullySelected(row.subGroup)"
+                        [binary]="true"
+                        [indeterminate]="isDateGroupPartiallySelected(row.subGroup)"
+                        (onChange)="toggleDateGroup(row.subGroup)"
+                        (click)="$event.stopPropagation()"
+                    ></p-checkbox>
+                </td>
+                <td colspan="8" style="border-bottom: none;">
+                    <div class="flex justify-between items-center">
+                        <div class="flex items-center gap-3">
+                            <i class="pi pi-calendar text-blue-500"></i>
+                            <span class="font-semibold" *ngIf="row.subGroup.startDate !== 'unset'">
+                                {{ row.subGroup.startDate | date:'dd MMM yyyy' }}
+                            </span>
+                            <span class="font-semibold text-color-secondary" *ngIf="row.subGroup.startDate === 'unset'">
+                                No departure date set
+                            </span>
+                            <p-tag [value]="row.subGroup.bookings.length + ' booking(s)'" severity="info" [rounded]="true"></p-tag>
+                            <p-tag [value]="row.subGroup.totalPersons + ' person(s)'" severity="secondary" [rounded]="true"></p-tag>
+                            <span *ngIf="row.subGroup.bookings.length > 1" class="text-xs font-semibold"
+                                  style="color: var(--primary-color);">
+                                <i class="pi pi-users mr-1"></i>Same date — can share departure
+                            </span>
+                        </div>
+                        <p-button
+                            icon="pi pi-send"
+                            label="Create Departure"
+                            size="small"
+                            severity="success"
+                            [outlined]="true"
+                            (click)="toggleDateGroup(row.subGroup); openManageDialog(group)"
+                            [pTooltip]="'Create departure for all ' + row.subGroup.bookings.length + ' booking(s) on this date'"
+                        ></p-button>
+                    </div>
+                </td>
+            </tr>
+            <!-- Booking data row -->
+            <tr *ngIf="row.type === 'booking'" class="cursor-pointer"
+                [style.background]="isBookingSelected(row.booking) ? 'color-mix(in srgb, var(--primary-color) 6%, var(--surface-card))' : ''"
+                (click)="toggleBooking(row.booking)">
+                <td>
+                    <p-checkbox
+                        [ngModel]="isBookingSelected(row.booking)"
+                        [binary]="true"
+                        (click)="$event.stopPropagation()"
+                        (onChange)="toggleBooking(row.booking)"
+                    ></p-checkbox>
+                </td>
+                <td>
+                    <span class="font-mono text-sm font-semibold">{{ row.booking.bookingReference ?? '—' }}</span>
+                </td>
+                <td>
+                    <div class="font-medium">{{ row.booking.leadTravelerName ?? '—' }}</div>
+                    <small class="text-color-secondary" *ngIf="row.booking.leadTravelerEmail">{{ row.booking.leadTravelerEmail }}</small>
+                    <small class="text-color-secondary" *ngIf="row.booking.leadTravelerPhone">&nbsp;· {{ row.booking.leadTravelerPhone }}</small>
+                </td>
+                <td>
+                    <span *ngIf="row.booking.startDate">{{ row.booking.startDate | date:'dd MMM yyyy' }}</span>
+                    <span *ngIf="row.booking.endDate"> → {{ row.booking.endDate | date:'dd MMM yyyy' }}</span>
+                    <span *ngIf="!row.booking.startDate" class="text-color-secondary">—</span>
+                </td>
+                <td class="text-center font-bold">{{ row.booking.totalPerson }}</td>
+                <td>
+                    <p-tag [value]="row.booking.status" [severity]="statusSeverity(row.booking.status)" [rounded]="true"></p-tag>
+                </td>
+                <td>
+                    <p-tag [value]="row.booking.paymentStatus" [severity]="paymentSeverity(row.booking.paymentStatus)" [rounded]="true"></p-tag>
+                </td>
+                <td class="font-semibold">NPR {{ row.booking.totalAmount | number:'1.0-0' }}</td>
+                <td>
+                    <p-button icon="pi pi-pencil" [rounded]="true" [text]="true" severity="info"
+                              pTooltip="Edit Booking" (click)="editBooking(row.booking, $event)"></p-button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr><td colspan="9" class="text-center text-color-secondary py-4">No unassigned bookings</td></tr>
+        </ng-template>
+    </p-table>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     CREATE / ASSIGN DEPARTURE DIALOG
+═══════════════════════════════════════════════════════════════════ -->
+<p-dialog
+    [(visible)]="showDepartureDialog"
+    header="Create / Assign Departure"
+    [modal]="true"
+    [style]="{width:'720px', maxWidth:'98vw'}"
+    [draggable]="false"
+    [resizable]="false"
+>
+    <!-- Selected bookings summary -->
+    <div class="rounded-lg p-3 mb-4 flex gap-4 flex-wrap text-sm" style="background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-card)); border: 1px solid var(--surface-border);">
+        <span><i class="pi pi-bookmark mr-1 text-blue-500"></i>
+            <strong>{{ selectedBookings.length }}</strong> booking(s) selected</span>
+        <span><i class="pi pi-users mr-1 text-blue-500"></i>
+            <strong>{{ totalSelectedPersons }}</strong> person(s)</span>
+        <span *ngIf="selectedGroup">
+            <i class="pi pi-map mr-1 text-blue-500"></i> {{ selectedGroup.itineraryTitle }}
+        </span>
+    </div>
+
+    <!-- ── Auto-suggest section ────────────────────────────── -->
+    <div class="mb-4">
+        <div class="flex items-center gap-2 mb-2">
+            <i class="pi pi-lightbulb text-yellow-500"></i>
+            <span class="font-semibold">Existing Departures with Available Capacity</span>
+            <p-progressSpinner *ngIf="loadingSuggestions" strokeWidth="4" styleClass="w-5 h-5"></p-progressSpinner>
+        </div>
+        <div *ngIf="!loadingSuggestions && suggestions.length === 0" class="text-color-secondary text-sm mb-2">
+            No existing departures found — create a new one below.
+        </div>
+        <div class="grid grid-cols-1 gap-2" *ngIf="suggestions.length > 0">
+            <div *ngFor="let s of suggestions"
+                 class="border rounded-lg p-3 cursor-pointer transition-all"
+                 [style.border-color]="selectedSuggestion?.id === s.id ? 'var(--primary-color)' : 'var(--surface-border)'"
+                 [style.background]="selectedSuggestion?.id === s.id ? 'color-mix(in srgb, var(--primary-color) 8%, var(--surface-card))' : 'var(--surface-card)'"
+                 (click)="selectSuggestion(s)">
+                <div class="flex justify-between items-start flex-wrap gap-2">
+                    <div>
+                        <div class="font-semibold">{{ s.itineraryTitle }}</div>
+                        <div class="text-sm text-color-secondary mt-0.5">
+                            {{ s.departureDate | date:'dd MMM yyyy' }}
+                            <span *ngIf="s.endDate"> → {{ s.endDate | date:'dd MMM yyyy' }}</span>
+                        </div>
+                        <div class="text-sm mt-1 flex gap-3 flex-wrap">
+                            <span *ngIf="s.guideName">
+                                <i class="pi pi-user text-blue-500 text-xs"></i> {{ s.guideName }}
+                            </span>
+                            <span *ngIf="s.vehicleInfo">
+                                <i class="pi pi-car text-green-500 text-xs"></i> {{ s.vehicleInfo }}
+                            </span>
+                        </div>
+                    </div>
+                    <div class="text-right">
+                        <p-tag [value]="s.status" severity="success" [rounded]="true"></p-tag>
+                        <div class="text-sm text-color-secondary mt-1">
+                            <span class="font-semibold text-green-600">{{ s.availableSeats }}</span>
+                            / {{ s.capacity }} seats free
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div *ngIf="suggestions.length > 0" class="mt-2 text-center">
+            <p-button label="Create New Instead" [text]="true" size="small" icon="pi pi-plus"
+                      (click)="selectedSuggestion = null; mode = 'new'"></p-button>
+        </div>
+    </div>
+
+    <p-divider></p-divider>
+
+    <!-- ── New departure form ───────────────────────────────── -->
+    <div *ngIf="mode === 'new'">
+        <h4 class="font-semibold mb-3 flex items-center gap-2">
+            <i class="pi pi-plus-circle text-blue-500"></i> New Departure Details
+        </h4>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+
+            <!-- Start Date -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Start Date <span class="text-red-500">*</span></label>
+                <p-datePicker
+                    [(ngModel)]="startDateObj"
+                    [showIcon]="true"
+                    [readonlyInput]="true"
+                    dateFormat="yy-mm-dd"
+                    placeholder="YYYY-MM-DD"
+                    (onSelect)="onStartDateSelect($event)"
+                    styleClass="w-full"
+                ></p-datePicker>
+            </div>
+
+            <!-- End Date -->
+            <div>
+                <label class="block text-sm font-medium mb-1">End Date <span class="text-red-500">*</span></label>
+                <p-datePicker
+                    [(ngModel)]="endDateObj"
+                    [showIcon]="true"
+                    [readonlyInput]="true"
+                    dateFormat="yy-mm-dd"
+                    placeholder="YYYY-MM-DD"
+                    [minDate]="startDateObj ?? undefined"
+                    (onSelect)="onEndDateSelect($event)"
+                    styleClass="w-full"
+                ></p-datePicker>
+            </div>
+
+            <!-- Capacity -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Capacity (max persons)</label>
+                <p-inputNumber [(ngModel)]="newDeparture.capacity" [min]="totalSelectedPersons" [showButtons]="true" class="w-full"></p-inputNumber>
+                <small class="text-color-secondary">Min {{ totalSelectedPersons }} (selected persons)</small>
+            </div>
+
+            <!-- Package price -->
+            <div>
+                <label class="block text-sm font-medium mb-1">Package Price (NPR)</label>
+                <p-inputNumber [(ngModel)]="newDeparture.packagePrice" [min]="0" prefix="NPR " class="w-full"></p-inputNumber>
+            </div>
+
+            <!-- Guide -->
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    <i class="pi pi-user mr-1 text-blue-500"></i>Assign Guide
+                </label>
+                <p-select
+                    [(ngModel)]="newDeparture.guideId"
+                    [options]="guideOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select guide (optional)"
+                    [showClear]="true"
+                    class="w-full"
+                ></p-select>
+            </div>
+
+            <!-- Vehicle -->
+            <div>
+                <label class="block text-sm font-medium mb-1">
+                    <i class="pi pi-car mr-1 text-green-500"></i>Assign Vehicle
+                </label>
+                <p-select
+                    [(ngModel)]="newDeparture.vehicleId"
+                    [options]="vehicleOptions()"
+                    optionLabel="label"
+                    optionValue="value"
+                    placeholder="Select vehicle (optional)"
+                    [showClear]="true"
+                    class="w-full"
+                ></p-select>
+            </div>
+
+            <!-- Notes -->
+            <div class="col-span-2">
+                <label class="block text-sm font-medium mb-1">Notes</label>
+                <textarea pTextarea [(ngModel)]="newDeparture.notes" rows="2" class="w-full" placeholder="Optional notes..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ── Assign to existing (summary) ────────────────────── -->
+    <div *ngIf="mode === 'assign' && selectedSuggestion" class="rounded-lg p-3" style="background: color-mix(in srgb, var(--green-500, #22c55e) 10%, var(--surface-card)); border: 1px solid var(--surface-border);">
+        <div class="flex items-center gap-2 mb-1">
+            <i class="pi pi-check-circle text-green-600"></i>
+            <span class="font-semibold text-green-700">Assigning to existing departure</span>
+        </div>
+        <div class="text-sm text-color-secondary">
+            <strong>{{ selectedSuggestion.itineraryTitle }}</strong> on
+            {{ selectedSuggestion.departureDate | date:'dd MMM yyyy' }}
+            — {{ selectedSuggestion.availableSeats }} seat(s) available.
+        </div>
+        <p-button label="Back to New Departure" [text]="true" size="small" icon="pi pi-arrow-left"
+                  class="mt-2" (click)="selectedSuggestion = null; mode = 'new'"></p-button>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Cancel" icon="pi pi-times" severity="secondary" [outlined]="true"
+                  (click)="showDepartureDialog = false"></p-button>
+        <p-button
+            [label]="mode === 'assign' ? 'Assign to Departure & Notify' : 'Create Departure & Notify'"
+            icon="pi pi-send"
+            [loading]="loading"
+            (click)="confirm()"
+        ></p-button>
+    </ng-template>
+</p-dialog>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════
+     SUCCESS / SUMMARY DIALOG
+═══════════════════════════════════════════════════════════════════ -->
+<p-dialog
+    [(visible)]="showSuccessDialog"
+    header="✅ Departure Created & Travelers Notified"
+    [modal]="true"
+    [style]="{width:'600px'}"
+    [draggable]="false"
+>
+    <div *ngIf="createdDeparture" class="text-sm">
+        <div class="grid grid-cols-2 gap-2 mb-4">
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Itinerary</div>
+                <div class="font-semibold">{{ createdDeparture.itineraryTitle }}</div>
+            </div>
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Dates</div>
+                <div class="font-semibold">
+                    {{ createdDeparture.departureDate | date:'dd MMM yyyy' }}
+                    <span *ngIf="createdDeparture.endDate"> → {{ createdDeparture.endDate | date:'dd MMM yyyy' }}</span>
+                </div>
+            </div>
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Guide</div>
+                <div class="font-semibold">{{ createdDeparture.guideName ?? '—' }}</div>
+            </div>
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Vehicle</div>
+                <div class="font-semibold">{{ createdDeparture.vehicleInfo ?? '—' }}</div>
+            </div>
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Total Booked</div>
+                <div class="font-semibold" style="color: var(--primary-color);">{{ createdDeparture.bookedCount }} / {{ createdDeparture.capacity }} persons</div>
+            </div>
+            <div class="rounded p-3" style="background: var(--surface-hover);">
+                <div class="text-color-secondary text-xs mb-0.5">Status</div>
+                <p-tag [value]="createdDeparture.status" severity="success" [rounded]="true"></p-tag>
+            </div>
+        </div>
+
+        <!-- Assigned bookings -->
+        <div class="font-semibold mb-2 flex items-center gap-2">
+            <i class="pi pi-users text-blue-500"></i>
+            Assigned Bookings ({{ createdDeparture.assignedBookings.length }})
+        </div>
+        <div *ngFor="let b of createdDeparture.assignedBookings"
+             class="flex justify-between items-center border rounded p-2 mb-2 text-xs">
+            <div>
+                <span class="font-mono font-semibold">{{ b.bookingReference }}</span>
+                <span *ngIf="b.leadTravelerName" class="ml-2 text-color-secondary">{{ b.leadTravelerName }}</span>
+            </div>
+            <div class="flex gap-3 items-center">
+                <span>{{ b.totalPerson }} person(s)</span>
+                <p-tag [value]="b.status" [severity]="statusSeverity(b.status)" [rounded]="true"></p-tag>
+            </div>
+        </div>
+
+        <div class="mt-3 p-3 rounded text-xs flex items-center gap-2" style="background: color-mix(in srgb, var(--green-500, #22c55e) 10%, var(--surface-card)); color: var(--green-500, #22c55e); border: 1px solid var(--surface-border);">
+            <i class="pi pi-bell"></i>
+            In-app notifications sent to all travelers for this departure.
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button label="Close" icon="pi pi-times" severity="secondary" (click)="showSuccessDialog = false"></p-button>
+    </ng-template>
+</p-dialog>

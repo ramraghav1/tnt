@@ -1,0 +1,105 @@
+/* ===== Day Card ===== */
+.day-card {
+  border: 1px solid var(--surface-border);
+  border-radius: 10px;
+  overflow: hidden;
+  background: var(--surface-card);
+  &:hover { box-shadow: 0 2px 8px color-mix(in srgb, var(--text-color) 8%, transparent); }
+}
+
+.day-description {
+  padding: 0.75rem 1rem;
+  margin-bottom: 0.5rem;
+  background: var(--surface-ground);
+  border-radius: 6px;
+  border-left: 3px solid var(--primary-color);
+}
+
+.day-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.875rem 1.25rem; cursor: pointer; user-select: none;
+  background: var(--surface-hover);
+  border-bottom: 1px solid var(--surface-border);
+  &:hover { background: color-mix(in srgb, var(--primary-color) 6%, var(--surface-hover)); }
+}
+
+.day-badge {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 2rem; height: 2rem; border-radius: 50%;
+  background: var(--primary-color); color: var(--primary-contrast-color);
+  font-weight: 700; font-size: 0.85rem; flex-shrink: 0;
+}
+
+.day-title { font-weight: 600; font-size: 1rem; color: var(--text-color); }
+
+.day-location {
+  display: block; font-size: 0.8rem; color: var(--text-color-secondary); margin-top: 2px;
+  .pi-map-marker { font-size: 0.75rem; margin-right: 0.15rem; }
+}
+
+.day-cost-tag {
+  font-size: 0.8rem; font-weight: 600; padding: 0.2rem 0.6rem; border-radius: 12px;
+  background: color-mix(in srgb, var(--primary-color) 12%, var(--surface-card)); color: var(--primary-color);
+}
+
+.day-body {
+  padding: 1.25rem; display: flex; flex-direction: column; gap: 1.25rem;
+  animation: fadeIn 0.2s ease;
+}
+
+.info-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 1rem; }
+.info-item { display: flex; flex-direction: column; gap: 0.25rem; }
+.info-label {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.03em; color: var(--text-color-secondary);
+  .pi { font-size: 0.7rem; margin-right: 0.2rem; }
+}
+.info-value { font-size: 0.95rem; color: var(--text-color); }
+
+/* ===== Chips ===== */
+.meal-chip, .activity-chip {
+  display: inline-block; padding: 0.2rem 0.7rem; border-radius: 12px;
+  font-size: 0.8rem; font-weight: 500;
+}
+.meal-chip { background: var(--p-green-50); color: var(--p-green-700); border: 1px solid var(--p-green-200); }
+.activity-chip { background: var(--p-blue-50); color: var(--p-blue-700); border: 1px solid var(--p-blue-200); }
+
+.section-block { display: flex; flex-direction: column; gap: 0.5rem; }
+.section-label {
+  font-size: 0.75rem; font-weight: 600; text-transform: uppercase;
+  letter-spacing: 0.03em; color: var(--text-color-secondary);
+  .pi { font-size: 0.7rem; margin-right: 0.2rem; }
+}
+
+/* ===== Cost List ===== */
+.cost-list {
+  display: flex; flex-direction: column;
+  border: 1px solid var(--surface-border); border-radius: 8px; overflow: hidden;
+}
+.cost-line {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 0.5rem 0.75rem; font-size: 0.875rem;
+  border-bottom: 1px solid var(--surface-border);
+  transition: background 0.15s ease;
+  &:last-child { border-bottom: none; }
+  &:not(.cost-total-line):hover { background: color-mix(in srgb, var(--primary-color) 8%, var(--surface-card)); cursor: default; }
+}
+.cost-total-line { background: var(--surface-hover); border-top: 1px dashed var(--surface-border); }
+.cost-category {
+  font-size: 0.7rem; padding: 0.1rem 0.4rem; border-radius: 6px;
+  background: var(--surface-hover); color: var(--text-color-secondary);
+}
+.cost-amount { font-weight: 600; color: var(--text-color); }
+
+/* ===== Grand Total ===== */
+.grand-total-card {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.25rem; background: color-mix(in srgb, var(--primary-color) 10%, var(--surface-card));
+  border: 1px solid color-mix(in srgb, var(--primary-color) 25%, transparent); border-radius: 10px;
+}
+.grand-total-amount { font-size: 1.3rem; font-weight: 700; color: var(--primary-color); }
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-6px); }
+  to { opacity: 1; transform: translateY(0); }
+}

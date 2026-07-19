@@ -1,0 +1,91 @@
+<p-toast></p-toast>
+
+<p-fluid>
+    <div class="flex flex-col gap-8">
+        <!-- Loading State -->
+        <div *ngIf="loading" class="card flex justify-content-center align-items-center" style="min-height: 400px;">
+            <p-progressSpinner></p-progressSpinner>
+        </div>
+
+        <!-- Content -->
+        <div *ngIf="!loading" class="flex flex-col gap-8">
+            
+            <!-- Page Header -->
+            <div class="card flex flex-col gap-4">
+                <h2 class="text-2xl font-bold m-0">{{ 'tenant.productSubscriptions' | translate }}</h2>
+                <p class="text-600 m-0">{{ 'tenant.productSubscriptionsDescription' | translate }}</p>
+            </div>
+
+            <!-- Subscribed Products Section -->
+            <div *ngIf="getSubscribedProducts().length > 0" class="card flex flex-col gap-6">
+                <div class="flex align-items-center justify-content-between">
+                    <div class="font-semibold text-xl">{{ 'tenant.subscribedProducts' | translate }}</div>
+                    <p-tag [value]="getSubscribedProducts().length + ' Active'" severity="success"></p-tag>
+                </div>
+                
+                <div class="grid">
+                    <div class="col-12 md:col-6 lg:col-4" *ngFor="let product of getSubscribedProducts()">
+                        <div class="surface-card border border-green-500 border-round-lg p-4 h-full hover:surface-hover transition-duration-150 cursor-pointer">
+                            <div class="flex align-items-start gap-3 mb-3">
+                                <div class="flex align-items-center justify-content-center border-circle border-2 border-green-500 surface-card" 
+                                     style="width: 50px; height: 50px; flex-shrink: 0;">
+                                    <i class="pi {{product.icon}} text-2xl" [style.color]="product.color"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-900 mb-1">{{ product.displayName }}</div>
+                                    <p-tag value="{{ 'tenant.active' | translate }}" severity="success" styleClass="text-xs"></p-tag>
+                                </div>
+                            </div>
+                            <p class="text-600 text-sm line-height-3 mb-3">{{ product.description }}</p>
+                            <div class="flex align-items-center justify-content-between text-sm">
+                                <span class="text-600">{{ 'tenant.subscriptionActive' | translate }}</span>
+                                <i class="pi pi-check-circle text-green-500 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Available Products Section -->
+            <div *ngIf="getAvailableProducts().length > 0" class="card flex flex-col gap-6">
+                <div class="flex align-items-center justify-content-between">
+                    <div class="font-semibold text-xl">{{ 'tenant.availableProducts' | translate }}</div>
+                    <p-tag [value]="getAvailableProducts().length + ' Available'" severity="secondary"></p-tag>
+                </div>
+                
+                <div class="grid">
+                    <div class="col-12 md:col-6 lg:col-4" *ngFor="let product of getAvailableProducts()">
+                        <div class="surface-card border surface-border border-round-lg p-4 h-full hover:surface-100 transition-duration-150" style="opacity: 0.7;">
+                            <div class="flex align-items-start gap-3 mb-3">
+                                <div class="flex align-items-center justify-content-center border-circle border-2 surface-border surface-card" 
+                                     style="width: 50px; height: 50px; flex-shrink: 0;">
+                                    <i class="pi {{product.icon}} text-2xl text-500" [style.color]="product.color"></i>
+                                </div>
+                                <div class="flex-1">
+                                    <div class="font-semibold text-700 mb-1">{{ product.displayName }}</div>
+                                    <p-tag value="{{ 'tenant.notSubscribed' | translate }}" severity="secondary" styleClass="text-xs"></p-tag>
+                                </div>
+                            </div>
+                            <p class="text-600 text-sm line-height-3 mb-3">{{ product.description }}</p>
+                            <div class="flex align-items-center justify-content-between text-sm">
+                                <span class="text-600">{{ 'tenant.contactAdminToActivate' | translate }}</span>
+                                <i class="pi pi-info-circle text-blue-500 text-lg"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- No Products Message -->
+            <div *ngIf="products.length === 0" class="card flex flex-col align-items-center justify-content-center p-8">
+                <i class="pi pi-inbox text-6xl text-400 mb-4"></i>
+                <h3 class="text-900 font-semibold mb-2">{{ 'tenant.noProductsSubscribed' | translate }}</h3>
+                <p class="text-600 text-center mb-4" style="max-width: 500px;">
+                    {{ 'tenant.contactAdminToSubscribe' | translate }}
+                </p>
+                <p-tag value="No Active Subscriptions" severity="secondary"></p-tag>
+            </div>
+
+        </div>
+    </div>
+</p-fluid>

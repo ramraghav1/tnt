@@ -1,0 +1,237 @@
+.media-gallery-container {
+    width: 100%;
+    margin: 0 auto;
+}
+
+.media-card {
+    background: var(--p-surface-0);
+    border: 1px solid var(--p-surface-200);
+    border-radius: var(--p-border-radius);
+    overflow: hidden;
+    transition: all 0.3s ease;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+
+    &:hover {
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+}
+
+.media-content {
+    position: relative;
+    width: 100%;
+    height: 250px;
+    overflow: hidden;
+    background: var(--p-surface-100);
+    
+    :deep(.p-image) {
+        width: 100%;
+        height: 100%;
+        
+        img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            transition: opacity 0.3s ease;
+        }
+
+        // Loading skeleton effect
+        img[loading="lazy"]:not([src]) {
+            background: linear-gradient(90deg, 
+                var(--p-surface-200) 25%, 
+                var(--p-surface-100) 50%, 
+                var(--p-surface-200) 75%);
+            background-size: 200% 100%;
+            animation: loading-skeleton 1.5s infinite;
+        }
+    }
+
+    .media-image-element {
+        // Smooth fade-in when image loads
+        animation: fadeIn 0.3s ease-in;
+    }
+}
+
+@keyframes loading-skeleton {
+    0% {
+        background-position: 200% 0;
+    }
+    100% {
+        background-position: -200% 0;
+    }
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+    }
+    to {
+        opacity: 1;
+    }
+}
+
+.media-video {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    background: var(--p-surface-900);
+}
+
+.video-thumbnail {
+    position: relative;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    overflow: hidden;
+    background: var(--p-surface-100);
+    
+    &:hover .play-overlay {
+        background: rgba(0, 0, 0, 0.7);
+    }
+}
+
+.thumbnail-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.3s ease, opacity 0.3s ease;
+    animation: fadeIn 0.3s ease-in;
+    
+    &[loading="lazy"] {
+        // Smooth loading effect
+        opacity: 0;
+        
+        &.loaded {
+            opacity: 1;
+        }
+    }
+}
+
+.play-overlay {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.5);
+    color: white;
+    transition: background 0.3s ease;
+}
+
+.featured-badge {
+    position: absolute;
+    top: 8px;
+    right: 8px;
+    background: var(--p-yellow-500);
+    color: var(--p-yellow-900);
+    padding: 4px 8px;
+    border-radius: var(--p-border-radius);
+    font-size: 0.75rem;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
+}
+
+.media-footer {
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    flex-grow: 1;
+}
+
+.media-caption {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--p-text-color);
+    line-height: 1.4;
+    flex-grow: 1;
+}
+
+.media-actions {
+    display: flex;
+    gap: 8px;
+    justify-content: flex-end;
+}
+
+// Responsive adjustments
+@media (max-width: 768px) {
+    .media-content {
+        height: 200px;
+    }
+}
+
+// Fix scrolling when image preview is open
+:host ::ng-deep {
+    .p-image-preview-container {
+        overflow-y: auto !important;
+        max-height: 100vh;
+    }
+
+    .p-image-preview-indicator {
+        cursor: pointer;
+    }
+
+    // Allow body scrolling when preview is open
+    body.p-overflow-hidden {
+        overflow: visible !important;
+        padding-right: 0 !important;
+    }
+
+    // Make preview mask scrollable
+    .p-image-mask {
+        overflow-y: auto !important;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 2rem 0;
+    }
+
+    // Ensure preview content is centered and scrollable
+    .p-image-preview {
+        max-height: 90vh;
+        max-width: 90vw;
+        object-fit: contain;
+    }
+
+    // Preview toolbar
+    .p-image-toolbar {
+        position: sticky;
+        top: 0;
+        z-index: 1;
+        background: rgba(0, 0, 0, 0.9);
+        backdrop-filter: blur(10px);
+    }
+
+    // Fix dialog scrolling
+    .p-dialog-mask {
+        overflow-y: auto !important;
+        display: flex !important;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .p-dialog {
+        max-height: 90vh;
+        display: flex;
+        flex-direction: column;
+    }
+
+    .p-dialog-content {
+        overflow-y: auto !important;
+        flex: 1;
+    }
+
+    // Prevent body scroll lock
+    body.p-overflow-hidden:has(.p-dialog) {
+        overflow: visible !important;
+        padding-right: 0 !important;
+    }
+}

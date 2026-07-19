@@ -1,0 +1,410 @@
+<p-toast></p-toast>
+
+<!-- Loading -->
+<div *ngIf="loading" class="flex justify-center items-center py-8">
+    <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+</div>
+
+<div *ngIf="!loading" class="surface-ground p-4 w-full">
+
+    <!-- Back Button -->
+    <button pButton icon="pi pi-arrow-left" label="Back to List" class="p-button-text mb-3" (click)="goBack()"></button>
+
+    <!-- ================================= -->
+    <!-- SECTION 1: Corridor Setup         -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <h2 class="text-2xl font-bold mb-2">
+            <i class="pi pi-chart-line mr-2"></i>
+            {{ editMode ? 'Edit FX Rate Setup' : 'New FX Rate Setup' }}
+        </h2>
+        <p class="text-color-secondary mb-4">Define the remittance corridor, payment type, optional agent, and exchange rates.</p>
+
+        <p-fluid>
+            <!-- Row 1: Sending & Receiving Country -->
+            <div class="font-semibold text-lg mb-3 mt-2">
+                <i class="pi pi-globe mr-2"></i>Corridor
+            </div>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="sendingCountry" class="font-semibold">Sending Country *</label>
+                    <p-select
+                        id="sendingCountry"
+                        [options]="countries"
+                        [(ngModel)]="sendingCountryId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select sending country"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                        (onChange)="onSendingCountryChange()"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="receivingCountry" class="font-semibold">Receiving Country *</label>
+                    <p-select
+                        id="receivingCountry"
+                        [options]="countries"
+                        [(ngModel)]="receivingCountryId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select receiving country"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                        (onChange)="onReceivingCountryChange()"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+            </div>
+
+            <!-- Row 2: Payment Type & Agent -->
+            <div class="font-semibold text-lg mb-3">
+                <i class="pi pi-credit-card mr-2"></i>Payment & Agent
+            </div>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="paymentType" class="font-semibold">Payment Type *</label>
+                    <p-select
+                        id="paymentType"
+                        [options]="paymentTypes"
+                        [(ngModel)]="paymentTypeId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select payment type"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="agent" class="font-semibold">Agent <span class="text-color-secondary text-sm">(Optional — leave empty for corridor default)</span></label>
+                    <p-select
+                        id="agent"
+                        [options]="filteredAgents"
+                        [(ngModel)]="agentId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Default (All Agents)"
+                        [filter]="true"
+                        filterPlaceholder="Search agents..."
+                        [showClear]="true"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+            </div>
+
+            <!-- Row 3: Active -->
+            <div class="flex items-center gap-2 mb-4">
+                <p-toggleswitch id="isActive" [(ngModel)]="isActive"></p-toggleswitch>
+                <label for="isActive" class="font-semibold">Active</label>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 2: Currency Configuration -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-dollar mr-2"></i>Currency Configuration
+        </div>
+        <p class="text-color-secondary mb-4">
+            Set sending and receiving currencies. Optionally specify a settlement currency for multi-currency settlement
+            (e.g., agent sends JPY but settles in USD).
+        </p>
+
+        <p-fluid>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Sending Currency *</label>
+                    <input pInputText [(ngModel)]="sendingCurrency" placeholder="e.g. JPY" maxlength="3" class="uppercase" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Receiving Currency *</label>
+                    <input pInputText [(ngModel)]="receivingCurrency" placeholder="e.g. NPR" maxlength="3" class="uppercase" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Settlement Currency <span class="text-color-secondary text-sm">(Optional)</span></label>
+                    <input pInputText [(ngModel)]="settlementCurrency" placeholder="e.g. USD" maxlength="3" class="uppercase" />
+                </div>
+            </div>
+
+            <!-- Currency flow visual -->
+            <div *ngIf="sendingCurrency && receivingCurrency" class="surface-100 border-round p-3 mb-2">
+                <div class="flex flex-wrap gap-2 items-center">
+                    <p-tag [value]="sendingCurrency" icon="pi pi-send" severity="info"></p-tag>
+                    <i class="pi pi-arrow-right text-color-secondary"></i>
+                    <p-tag [value]="receivingCurrency" icon="pi pi-inbox" severity="success"></p-tag>
+                    <span *ngIf="needsSettlement" class="text-color-secondary mx-1">|</span>
+                    <span *ngIf="needsSettlement" class="text-sm text-color-secondary">Settlement in</span>
+                    <p-tag *ngIf="needsSettlement" [value]="settlementCurrency" icon="pi pi-building" severity="warn"></p-tag>
+                </div>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 3: Rate Configuration     -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-percentage mr-2"></i>Exchange Rates
+        </div>
+        <p class="text-color-secondary mb-4">
+            <strong>Customer Rate</strong>: Rate shown to customer for {{ sendingCurrency || '???' }} → {{ receivingCurrency || '???' }}.
+            <span *ngIf="needsSettlement">
+                <strong>Settlement Rate</strong>: Rate used for agent settlement in {{ settlementCurrency }}.
+                <strong>Cross Rate</strong>: Internal cross rate for multi-currency reconciliation.
+            </span>
+        </p>
+
+        <p-fluid>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Customer Rate * <span class="text-color-secondary text-sm">({{ sendingCurrency || '???' }} → {{ receivingCurrency || '???' }})</span></label>
+                    <p-inputNumber
+                        [(ngModel)]="customerRate"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="6"
+                        [min]="0"
+                        placeholder="0.000000"
+                        mode="decimal"
+                    ></p-inputNumber>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Settlement Rate <span class="text-color-secondary text-sm">({{ needsSettlement ? sendingCurrency + ' → ' + settlementCurrency : 'Optional' }})</span></label>
+                    <p-inputNumber
+                        [(ngModel)]="settlementRate"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="6"
+                        [min]="0"
+                        placeholder="0.000000"
+                        mode="decimal"
+                    ></p-inputNumber>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Cross Rate <span class="text-color-secondary text-sm">({{ needsCrossRate ? settlementCurrency + ' → ' + receivingCurrency : 'Optional' }})</span></label>
+                    <p-inputNumber
+                        [(ngModel)]="crossRate"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="6"
+                        [min]="0"
+                        placeholder="0.000000"
+                        mode="decimal"
+                    ></p-inputNumber>
+                </div>
+            </div>
+
+            <!-- Margin -->
+            <p-divider></p-divider>
+            <div class="font-semibold text-md mb-3">Margin Configuration <span class="text-color-secondary text-sm">(Optional)</span></div>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full md:w-1/2">
+                    <label class="font-semibold">Margin Type</label>
+                    <p-select
+                        [options]="marginTypeOptions"
+                        [(ngModel)]="marginType"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="No margin"
+                        [showClear]="true"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full md:w-1/2">
+                    <label class="font-semibold">Margin Value <span *ngIf="marginType" class="text-color-secondary text-sm">({{ marginType === 'Percentage' ? '%' : sendingCurrency }})</span></label>
+                    <p-inputNumber
+                        [(ngModel)]="marginValue"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="4"
+                        [min]="0"
+                        placeholder="0.00"
+                        mode="decimal"
+                        [disabled]="!marginType"
+                    ></p-inputNumber>
+                </div>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 4: Validity Period        -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-calendar mr-2"></i>Validity Period <span class="text-color-secondary text-sm">(Optional)</span>
+        </div>
+        <p class="text-color-secondary mb-4">Leave empty for an indefinitely valid rate.</p>
+
+        <p-fluid>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Valid From</label>
+                    <p-datepicker
+                        [(ngModel)]="validFrom"
+                        [showTime]="true"
+                        [showIcon]="true"
+                        dateFormat="yy-mm-dd"
+                        placeholder="Select start date"
+                        [appendTo]="'body'"
+                    ></p-datepicker>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Valid To</label>
+                    <p-datepicker
+                        [(ngModel)]="validTo"
+                        [showTime]="true"
+                        [showIcon]="true"
+                        dateFormat="yy-mm-dd"
+                        placeholder="Select end date"
+                        [minDate]="validFrom!"
+                        [appendTo]="'body'"
+                    ></p-datepicker>
+                </div>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 5: Corridor Summary       -->
+    <!-- ================================= -->
+    <div *ngIf="sendingCountryId && receivingCountryId && paymentTypeId && customerRate" class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-info-circle mr-2"></i>Rate Summary
+        </div>
+        <div class="surface-100 border-round p-4">
+            <div class="flex flex-wrap gap-2 items-center mb-3">
+                <p-tag [value]="getSendingCountryName()" icon="pi pi-send" severity="info"></p-tag>
+                <i class="pi pi-arrow-right text-color-secondary"></i>
+                <p-tag [value]="getReceivingCountryName()" icon="pi pi-inbox" severity="success"></p-tag>
+                <span class="text-color-secondary mx-1">|</span>
+                <p-tag [value]="getPaymentTypeName()" icon="pi pi-credit-card" severity="warn"></p-tag>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-3">
+                <div class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Customer Rate</div>
+                    <div class="text-2xl font-bold text-primary font-mono">{{ formatRate(customerRate) }}</div>
+                    <div class="text-xs text-color-secondary mt-1">1 {{ sendingCurrency }} = {{ formatRate(customerRate) }} {{ receivingCurrency }}</div>
+                </div>
+                <div *ngIf="settlementRate" class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Settlement Rate</div>
+                    <div class="text-2xl font-bold font-mono" style="color: var(--orange-500)">{{ formatRate(settlementRate) }}</div>
+                    <div class="text-xs text-color-secondary mt-1">1 {{ sendingCurrency }} = {{ formatRate(settlementRate) }} {{ settlementCurrency || receivingCurrency }}</div>
+                </div>
+                <div *ngIf="crossRate" class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Cross Rate</div>
+                    <div class="text-2xl font-bold font-mono" style="color: var(--cyan-500)">{{ formatRate(crossRate) }}</div>
+                    <div class="text-xs text-color-secondary mt-1">{{ settlementCurrency || '—' }} / {{ receivingCurrency }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 6: Rate Calculator        -->
+    <!-- ================================= -->
+    <div *ngIf="editMode && sendingCountryId && receivingCountryId && paymentTypeId" class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-calculator mr-2"></i>Rate Calculator
+        </div>
+        <p class="text-color-secondary mb-4">Test the configured rate by converting an amount.</p>
+
+        <div class="flex flex-col md:flex-row gap-4 items-end mb-4">
+            <div class="flex flex-col gap-2 w-full md:w-1/3">
+                <label class="font-semibold">Send Amount ({{ sendingCurrency }})</label>
+                <p-inputNumber
+                    [(ngModel)]="calcAmount"
+                    [minFractionDigits]="2"
+                    [min]="0"
+                    placeholder="Enter amount"
+                    mode="decimal"
+                ></p-inputNumber>
+            </div>
+            <div class="w-full md:w-1/3">
+                <button pButton label="Calculate" icon="pi pi-calculator" (click)="calculateConversion()" [loading]="calcLoading" severity="info"></button>
+            </div>
+        </div>
+
+        <div *ngIf="calcResult" class="surface-100 border-round p-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Send</div>
+                    <div class="text-xl font-bold font-mono">{{ calcResult.sendAmount | number:'1.2-2' }}</div>
+                    <div class="text-xs text-color-secondary">{{ calcResult.sendingCurrency }}</div>
+                </div>
+                <div class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Receive</div>
+                    <div class="text-xl font-bold text-primary font-mono">{{ calcResult.receiveAmount | number:'1.2-2' }}</div>
+                    <div class="text-xs text-color-secondary">{{ calcResult.receivingCurrency }}</div>
+                </div>
+                <div *ngIf="calcResult.settlementAmount" class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Settlement</div>
+                    <div class="text-xl font-bold font-mono" style="color: var(--orange-500)">{{ calcResult.settlementAmount | number:'1.2-2' }}</div>
+                    <div class="text-xs text-color-secondary">{{ calcResult.settlementCurrency }}</div>
+                </div>
+                <div class="text-center p-3 surface-card border-round shadow-1">
+                    <div class="text-color-secondary text-sm mb-1">Rate Applied</div>
+                    <div class="text-xl font-bold font-mono">{{ formatRate(calcResult.customerRate) }}</div>
+                    <div class="text-xs text-color-secondary">{{ calcResult.sendingCurrency }}/{{ calcResult.receivingCurrency }}</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 7: Rate Change History    -->
+    <!-- ================================= -->
+    <div *ngIf="editMode && history.length > 0" class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-history mr-2"></i>Rate Change History
+        </div>
+
+        <p-table [value]="history" [showGridlines]="true" [rows]="5" [paginator]="history.length > 5" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th>Date</th>
+                    <th>Customer Rate</th>
+                    <th>Settlement Rate</th>
+                    <th>Cross Rate</th>
+                    <th>Changed By</th>
+                    <th>Reason</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-h>
+                <tr>
+                    <td class="text-sm">{{ h.changedAt | date:'yyyy-MM-dd HH:mm' }}</td>
+                    <td>
+                        <span *ngIf="h.previousCustomerRate != null" class="text-color-secondary text-sm line-through mr-1">{{ formatRate(h.previousCustomerRate) }}</span>
+                        <span class="font-semibold font-mono">{{ formatRate(h.newCustomerRate) }}</span>
+                    </td>
+                    <td>
+                        <span *ngIf="h.previousSettlementRate != null" class="text-color-secondary text-sm line-through mr-1">{{ formatRate(h.previousSettlementRate) }}</span>
+                        <span class="font-mono">{{ formatRate(h.newSettlementRate) }}</span>
+                    </td>
+                    <td>
+                        <span *ngIf="h.previousCrossRate != null" class="text-color-secondary text-sm line-through mr-1">{{ formatRate(h.previousCrossRate) }}</span>
+                        <span class="font-mono">{{ formatRate(h.newCrossRate) }}</span>
+                    </td>
+                    <td class="text-color-secondary text-sm">{{ h.changedBy || '—' }}</td>
+                    <td class="text-color-secondary text-sm">{{ h.reason || '—' }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 8: Actions                -->
+    <!-- ================================= -->
+    <div class="flex justify-end gap-3 mt-4">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="goBack()"></button>
+        <button pButton
+            [label]="editMode ? 'Update FX Rate' : 'Create FX Rate'"
+            icon="pi pi-check"
+            severity="success"
+            [loading]="submitting"
+            [disabled]="!isFormValid()"
+            (click)="saveSetup()">
+        </button>
+    </div>
+</div>

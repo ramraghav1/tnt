@@ -1,0 +1,88 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <div class="font-semibold text-xl">{{ 'inventory.guides' | translate }}</div>
+        <button pButton [label]="'inventory.addGuide' | translate" icon="pi pi-plus" (click)="addNew()"></button>
+    </div>
+
+    <p-table
+        #dt
+        [value]="guides"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [globalFilterFields]="['fullName', 'specialization', 'languages']"
+        responsiveLayout="scroll"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [showGridlines]="true"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-column sm:flex-row">
+                <button pButton icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (click)="clear(dt)" [label]="'common.clear' | translate"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" [placeholder]="'inventory.searchGuides' | translate" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="fullName">{{ 'inventory.fullName' | translate }} <p-sortIcon field="fullName"></p-sortIcon></th>
+                <th pSortableColumn="specialization">{{ 'inventory.specialization' | translate }} <p-sortIcon field="specialization"></p-sortIcon></th>
+                <th>{{ 'inventory.languages' | translate }}</th>
+                <th pSortableColumn="experienceYears">{{ 'inventory.experienceYears' | translate }} <p-sortIcon field="experienceYears"></p-sortIcon></th>
+                <th pSortableColumn="rating">{{ 'inventory.rating' | translate }} <p-sortIcon field="rating"></p-sortIcon></th>
+                <th pSortableColumn="pricePerDay">{{ 'inventory.pricePerDay' | translate }} <p-sortIcon field="pricePerDay"></p-sortIcon></th>
+                <th pSortableColumn="isActive">{{ 'inventory.status' | translate }} <p-sortIcon field="isActive"></p-sortIcon></th>
+                <th>{{ 'inventory.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-guide>
+            <tr>
+                <td>
+                    <strong>{{ guide.fullName }}</strong><br/>
+                    <small class="text-gray-500" *ngIf="guide.contactNumber">{{ guide.contactNumber }}</small>
+                </td>
+                <td>{{ guide.specialization }}</td>
+                <td>
+                    <span *ngFor="let lang of guide.languages?.slice(0, 2); let i = index">
+                        {{ lang }}<span *ngIf="i < guide.languages.length - 1">, </span>
+                    </span>
+                    <span *ngIf="guide.languages?.length > 2"> +{{ guide.languages.length - 2 }}</span>
+                </td>
+                <td>{{ guide.experienceYears }} {{ 'inventory.years' | translate }}</td>
+                <td>{{ getRatingStars(guide.rating) }}</td>
+                <td>
+                    <div>NPR {{ guide.pricePerDay }}</div>
+                    <small class="text-gray-500" *ngIf="guide.pricePerDayUsd">USD {{ guide.pricePerDayUsd }}</small>
+                    <small class="text-gray-500 ml-2" *ngIf="guide.pricePerDayInr">INR {{ guide.pricePerDayInr }}</small>
+                </td>
+                <td>
+                    <p-tag 
+                        [value]="guide.isActive ? ('inventory.active' | translate) : ('inventory.inactive' | translate)" 
+                        [severity]="getStatusSeverity(guide.isActive)"
+                    ></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-info" (click)="editGuide(guide)" [pTooltip]="'inventory.edit' | translate"></button>
+                        <button *ngIf="guide.isActive" pButton icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="deleteGuide(guide)" [pTooltip]="'inventory.delete' | translate"></button>
+                        <button *ngIf="!guide.isActive" pButton icon="pi pi-check" class="p-button-rounded p-button-outlined p-button-success" (click)="activateGuide(guide)" [pTooltip]="'inventory.activate' | translate"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center">{{ 'inventory.noGuidesFound' | translate }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

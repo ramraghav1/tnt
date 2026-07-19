@@ -1,0 +1,134 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <span class="font-semibold text-xl">Countries</span>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New Country" icon="pi pi-plus" severity="success" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="countries"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [showGridlines]="true"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['name', 'iso2Code', 'iso3Code', 'currencyCode', 'currencyName']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search countries..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="name">Name <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="iso2Code">ISO2 <p-sortIcon field="iso2Code"></p-sortIcon></th>
+                <th pSortableColumn="iso3Code">ISO3 <p-sortIcon field="iso3Code"></p-sortIcon></th>
+                <th pSortableColumn="phoneCode">Phone Code <p-sortIcon field="phoneCode"></p-sortIcon></th>
+                <th pSortableColumn="currencyCode">Currency <p-sortIcon field="currencyCode"></p-sortIcon></th>
+                <th pSortableColumn="currencyName">Currency Name <p-sortIcon field="currencyName"></p-sortIcon></th>
+                <th>Status</th>
+                <th style="min-width: 8rem">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-country>
+            <tr>
+                <td class="font-semibold">{{ country.name }}</td>
+                <td>{{ country.iso2Code }}</td>
+                <td>{{ country.iso3Code }}</td>
+                <td>{{ country.phoneCode }}</td>
+                <td>{{ country.currencyCode }}</td>
+                <td class="text-color-secondary">{{ country.currencyName }}</td>
+                <td>
+                    <p-tag [value]="country.isActive ? 'Active' : 'Inactive'" [severity]="country.isActive ? 'success' : 'danger'"></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-success p-button-sm" (click)="editCountry(country)"></button>
+                        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="deleteCountry(country)"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-globe text-4xl"></i>
+                        <span>No countries found.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editMode ? 'Edit Country' : 'New Country'"
+    [modal]="true"
+    [style]="{ width: '550px' }"
+    [closable]="true"
+>
+    <p-fluid>
+        <div class="flex flex-col gap-4 mt-2">
+            <div class="flex flex-col gap-2">
+                <label for="name" class="font-semibold">Name *</label>
+                <input pInputText id="name" [(ngModel)]="selectedCountry.name" placeholder="Country name" />
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="iso2" class="font-semibold">ISO2 Code</label>
+                    <input pInputText id="iso2" [(ngModel)]="selectedCountry.iso2Code" placeholder="e.g. US" maxlength="2" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="iso3" class="font-semibold">ISO3 Code</label>
+                    <input pInputText id="iso3" [(ngModel)]="selectedCountry.iso3Code" placeholder="e.g. USA" maxlength="3" />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="phoneCode" class="font-semibold">Phone Code</label>
+                <input pInputText id="phoneCode" [(ngModel)]="selectedCountry.phoneCode" placeholder="e.g. +1" />
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="currencyCode" class="font-semibold">Currency Code</label>
+                    <input pInputText id="currencyCode" [(ngModel)]="selectedCountry.currencyCode" placeholder="e.g. USD" maxlength="3" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="currencyName" class="font-semibold">Currency Name</label>
+                    <input pInputText id="currencyName" [(ngModel)]="selectedCountry.currencyName" placeholder="e.g. US Dollar" />
+                </div>
+            </div>
+
+            <div class="flex items-center gap-2">
+                <p-toggleswitch id="isActive" [(ngModel)]="selectedCountry.isActive"></p-toggleswitch>
+                <label for="isActive" class="font-semibold">Active</label>
+            </div>
+        </div>
+    </p-fluid>
+
+    <ng-template pTemplate="footer">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-text" (click)="dialogVisible = false"></button>
+        <button pButton label="Save" icon="pi pi-check" (click)="saveCountry()" [disabled]="!selectedCountry.name"></button>
+    </ng-template>
+</p-dialog>

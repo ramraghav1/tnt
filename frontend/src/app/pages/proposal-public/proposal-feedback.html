@@ -1,0 +1,59 @@
+<p-toast></p-toast>
+
+<div class="feedback-public-page">
+    <!-- Loading -->
+    <div *ngIf="loading" class="flex justify-center items-center" style="min-height: 400px;">
+        <p-progressSpinner [style]="{ width: '50px', height: '50px' }" strokeWidth="4"></p-progressSpinner>
+    </div>
+
+    <!-- Not Found -->
+    <div *ngIf="!loading && !proposal" class="text-center py-8">
+        <i class="pi pi-exclamation-triangle text-6xl text-orange-400 mb-4 block"></i>
+        <h2>Proposal Not Found</h2>
+        <p class="text-gray-500">This link may be invalid or expired.</p>
+    </div>
+
+    <div *ngIf="!loading && proposal && !submitted">
+        <!-- Header -->
+        <div class="feedback-header">
+            <button pButton icon="pi pi-arrow-left" label="Back to Proposal" class="p-button-text" (click)="goBackToProposal()"></button>
+        </div>
+
+        <div class="feedback-card">
+            <div class="feedback-icon">
+                <i class="pi pi-comment"></i>
+            </div>
+            <h2>Request Changes</h2>
+            <p class="text-gray-500 mb-4">
+                Tell us what you'd like changed in the itinerary for
+                <strong>{{ proposal.itineraryTitle }}</strong>.
+                We'll review your feedback and send you an updated proposal.
+            </p>
+
+            <div class="mb-3">
+                <label class="block mb-2 font-semibold">Your Feedback / Concerns</label>
+                <textarea pTextarea [(ngModel)]="feedbackMessage" rows="6" class="w-full"
+                    placeholder="E.g., I'd like to add an extra day in Pokhara, change the hotel on Day 3, remove the trek on Day 5..."></textarea>
+            </div>
+
+            <div class="text-center">
+                <button pButton label="Submit Feedback" icon="pi pi-send"
+                    class="p-button-lg" [loading]="submitting" (click)="submitFeedback()"></button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Success -->
+    <div *ngIf="!loading && proposal && submitted" class="success-section">
+        <div class="success-anim">
+            <i class="pi pi-check-circle"></i>
+        </div>
+        <h2>Feedback Submitted!</h2>
+        <p class="text-gray-500">Thank you, <strong>{{ proposal.travelerName }}</strong>!</p>
+        <p class="text-gray-500">
+            We've received your feedback and our team will review it shortly.
+            You'll receive an updated proposal via email once we've made the changes.
+        </p>
+        <button pButton label="Back to Proposal" icon="pi pi-arrow-left" class="p-button-outlined mt-3" (click)="goBackToProposal()"></button>
+    </div>
+</div>

@@ -1,0 +1,10 @@
+:host ::ng-deep {
+    .p-chips,
+    .p-inputnumber {
+        width: 100%;
+        
+        input, .p-chips-multiple-container {
+            width: 100%;
+        }
+    }
+}

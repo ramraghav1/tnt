@@ -1,0 +1,512 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="portal-page">
+    <!-- Loading -->
+    <div *ngIf="loading" class="flex justify-center items-center" style="min-height: 400px;">
+        <p-progressSpinner [style]="{ width: '50px', height: '50px' }" strokeWidth="4"></p-progressSpinner>
+    </div>
+
+    <!-- Not Found -->
+    <div *ngIf="!loading && !proposal" class="empty-state">
+        <i class="pi pi-exclamation-triangle"></i>
+        <h2>Proposal Not Found</h2>
+        <p>This proposal link may have expired or is invalid.</p>
+    </div>
+
+    <!-- Expired -->
+    <div *ngIf="!loading && proposal && expired" class="empty-state">
+        <i class="pi pi-clock" style="color: #f59e0b;"></i>
+        <h2>Proposal Expired</h2>
+        <p>This proposal expired on {{ proposal.expiresAt | date:'MMMM d, yyyy' }}. Please contact us for a new proposal.</p>
+    </div>
+
+    <!-- ======================================== -->
+    <!-- MAIN PORTAL -->
+    <!-- ======================================== -->
+    <div *ngIf="!loading && proposal && !expired" class="portal-content">
+
+        <!-- HEADER -->
+        <div class="portal-header">
+            <div class="header-left">
+                <div class="brand">
+                    <div class="brand-icon">T</div>
+                    <span>TNT Nepal</span>
+                </div>
+                <span class="quotation-ref">QTN-{{ proposal.id }}</span>
+            </div>
+            <div class="header-right">
+                <p-tag [value]="getStatusLabel(proposal.status)" [severity]="getStatusSeverity(proposal.status)"></p-tag>
+            </div>
+        </div>
+
+        <!-- HERO -->
+        <div class="portal-hero">
+            <h1>{{ proposal.itineraryTitle }}</h1>
+            <p>Prepared for <strong>{{ proposal.travelerName }}</strong></p>
+            <div class="hero-meta">
+                <span><i class="pi pi-calendar"></i> {{ proposal.startDate | date:'dd MMM yyyy' }} — {{ proposal.endDate | date:'dd MMM yyyy' }}</span>
+                <span><i class="pi pi-sun"></i> {{ proposal.days.length }} Days</span>
+                <span class="hero-price"><i class="pi pi-wallet"></i> NPR {{ proposal.totalAmount | number:'1.0-0' }}</span>
+            </div>
+        </div>
+
+        <!-- ACTION BAR (for actionable statuses) -->
+        <div *ngIf="proposal.status === 'Sent'" class="action-bar">
+            <div class="action-bar-text">
+                <i class="pi pi-info-circle"></i>
+                <span>Review, accept, or request changes to this quotation</span>
+            </div>
+            <div class="action-bar-buttons">
+                <button pButton label="Accept Quotation" icon="pi pi-check" class="p-button-success" [loading]="accepting" (click)="acceptProposal()"></button>
+                <button pButton label="Request Changes" icon="pi pi-pencil" class="p-button-outlined" (click)="openFeedbackDialog()"></button>
+                <button pButton label="Decline" icon="pi pi-times" class="p-button-outlined p-button-danger p-button-sm" [loading]="rejecting" (click)="rejectProposal()"></button>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'Accepted'" class="action-bar action-bar-success">
+            <div class="action-bar-text">
+                <i class="pi pi-check-circle"></i>
+                <span>Quotation accepted! Proceed to payment to confirm your trip.</span>
+            </div>
+            <div class="action-bar-buttons">
+                <button pButton label="Make Payment" icon="pi pi-wallet" class="p-button-success" (click)="activeTab = 3"></button>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'PaymentSubmitted'" class="action-bar action-bar-warn">
+            <div class="action-bar-text">
+                <i class="pi pi-clock"></i>
+                <span>Your payment is being verified. You'll receive a confirmation email once confirmed.</span>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'Confirmed'" class="action-bar action-bar-confirmed">
+            <div class="action-bar-text">
+                <i class="pi pi-check-circle"></i>
+                <span>Booking confirmed! Your trip is all set. Download your invoice below.</span>
+            </div>
+            <div class="action-bar-buttons">
+                <button pButton label="View Invoice" icon="pi pi-file" class="p-button-outlined" (click)="activeTab = 4; loadInvoice()"></button>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'PaymentRejected'" class="action-bar action-bar-danger">
+            <div class="action-bar-text">
+                <i class="pi pi-exclamation-triangle"></i>
+                <span>Payment could not be verified. Please try again or contact us.</span>
+            </div>
+            <div class="action-bar-buttons">
+                <button pButton label="Try Payment Again" icon="pi pi-wallet" class="p-button-warning" (click)="activeTab = 3; resetPayment()"></button>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'FeedbackReceived'" class="action-bar action-bar-info">
+            <div class="action-bar-text">
+                <i class="pi pi-comment"></i>
+                <span>We received your feedback and are preparing an updated proposal.</span>
+            </div>
+        </div>
+
+        <div *ngIf="proposal.status === 'Rejected'" class="action-bar action-bar-danger">
+            <div class="action-bar-text">
+                <i class="pi pi-times-circle"></i>
+                <span>You declined this quotation. Contact us if you'd like a new proposal.</span>
+            </div>
+        </div>
+
+        <!-- TABS -->
+        <div class="portal-tabs">
+            <div class="tab-nav">
+                <button [class.active]="activeTab === 0" (click)="onTabChange(0)"><i class="pi pi-th-large"></i> Overview</button>
+                <button [class.active]="activeTab === 1" (click)="onTabChange(1)"><i class="pi pi-list"></i> Itinerary</button>
+                <button [class.active]="activeTab === 2" (click)="onTabChange(2)"><i class="pi pi-dollar"></i> Pricing</button>
+                <button [class.active]="activeTab === 3" (click)="onTabChange(3)"
+                    *ngIf="proposal.status === 'Accepted' || proposal.status === 'PaymentSubmitted' || proposal.status === 'Confirmed' || proposal.status === 'PaymentRejected'">
+                    <i class="pi pi-wallet"></i> Payments
+                </button>
+                <button [class.active]="activeTab === 4" (click)="onTabChange(4)" *ngIf="proposal.status === 'Confirmed'">
+                    <i class="pi pi-file"></i> Invoice
+                </button>
+            </div>
+
+            <!-- ==================== TAB: OVERVIEW ==================== -->
+            <div class="tab-panel" *ngIf="activeTab === 0">
+                <div class="overview-grid">
+                    <!-- Trip Summary -->
+                    <div class="overview-card">
+                        <div class="ov-card-icon"><i class="pi pi-map"></i></div>
+                        <div class="ov-card-body">
+                            <label>Trip</label>
+                            <strong>{{ proposal.itineraryTitle }}</strong>
+                        </div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="ov-card-icon"><i class="pi pi-calendar"></i></div>
+                        <div class="ov-card-body">
+                            <label>Dates</label>
+                            <strong>{{ proposal.startDate | date:'dd MMM' }} — {{ proposal.endDate | date:'dd MMM yyyy' }}</strong>
+                        </div>
+                    </div>
+                    <div class="overview-card">
+                        <div class="ov-card-icon"><i class="pi pi-sun"></i></div>
+                        <div class="ov-card-body">
+                            <label>Duration</label>
+                            <strong>{{ proposal.days.length }} Days</strong>
+                        </div>
+                    </div>
+                    <div class="overview-card highlight">
+                        <div class="ov-card-icon"><i class="pi pi-wallet"></i></div>
+                        <div class="ov-card-body">
+                            <label>Total Cost</label>
+                            <strong>NPR {{ proposal.totalAmount | number:'1.0-0' }}</strong>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Glance -->
+                <div class="quick-glance">
+                    <h3>Quick Glance</h3>
+                    <div class="glance-row" *ngFor="let day of proposal.days">
+                        <div class="glance-day">Day {{ day.dayNumber }}</div>
+                        <div class="glance-desc">{{ day.title || day.location || '—' }}</div>
+                        <div class="glance-loc"><i class="pi pi-map-marker"></i> {{ day.location || '—' }}</div>
+                    </div>
+                </div>
+
+                <!-- Notes -->
+                <div *ngIf="proposal.notes" class="notes-box">
+                    <i class="pi pi-info-circle"></i>
+                    <p>{{ proposal.notes }}</p>
+                </div>
+
+                <!-- Validity -->
+                <div class="validity-bar">
+                    <i class="pi pi-clock"></i>
+                    <span>Quotation sent on {{ proposal.createdAt | date:'MMMM d, yyyy' }} · Valid until <strong>{{ proposal.expiresAt | date:'MMMM d, yyyy' }}</strong></span>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: ITINERARY ==================== -->
+            <div class="tab-panel" *ngIf="activeTab === 1">
+                <h2 class="section-title"><i class="pi pi-list"></i> Day-by-Day Itinerary</h2>
+
+                <div *ngFor="let day of proposal.days" class="timeline-day">
+                    <div class="timeline-marker"><span>{{ day.dayNumber }}</span></div>
+                    <div class="timeline-content">
+                        <h3>{{ day.title || 'Day ' + day.dayNumber }}</h3>
+                        <div class="day-details">
+                            <div *ngIf="day.location" class="detail-chip"><i class="pi pi-map-marker"></i> {{ day.location }}</div>
+                            <div *ngIf="day.accommodation" class="detail-chip"><i class="pi pi-building"></i> {{ day.accommodation }}</div>
+                            <div *ngIf="day.transport" class="detail-chip"><i class="pi pi-car"></i> {{ day.transport }}</div>
+                            <div *ngIf="getMeals(day).length" class="detail-chip"><i class="pi pi-star"></i> {{ getMeals(day).join(', ') }}</div>
+                        </div>
+                        <p *ngIf="day.description" class="day-description">{{ day.description }}</p>
+                        <div *ngIf="day.activities.length" class="activities-list">
+                            <span *ngFor="let act of day.activities" class="activity-pill">{{ act }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: PRICING ==================== -->
+            <div class="tab-panel" *ngIf="activeTab === 2">
+                <h2 class="section-title"><i class="pi pi-dollar"></i> Cost Breakdown</h2>
+
+                <!-- Cost Summary -->
+                <div class="cost-table">
+                    <div class="cost-header">
+                        <span>Description</span>
+                        <span>Amount</span>
+                    </div>
+                    <div class="cost-row">
+                        <span>{{ proposal.itineraryTitle }} ({{ proposal.days.length }} Days)</span>
+                        <span>NPR {{ proposal.totalAmount | number:'1.2-2' }}</span>
+                    </div>
+                    <div class="cost-total">
+                        <span>Total Amount</span>
+                        <span>NPR {{ proposal.totalAmount | number:'1.2-2' }}</span>
+                    </div>
+                </div>
+
+                <!-- Inclusions / Exclusions -->
+                <div class="inc-exc-grid">
+                    <div class="inc-box">
+                        <h3><i class="pi pi-check-circle"></i> Inclusions</h3>
+                        <ul>
+                            <li *ngFor="let item of inclusions">{{ item }}</li>
+                        </ul>
+                    </div>
+                    <div class="exc-box">
+                        <h3><i class="pi pi-times-circle"></i> Exclusions</h3>
+                        <ul>
+                            <li *ngFor="let item of exclusions">{{ item }}</li>
+                        </ul>
+                    </div>
+                </div>
+
+                <!-- Payment Terms -->
+                <div class="terms-section">
+                    <h3>Payment Terms</h3>
+                    <ul>
+                        <li>30% advance for booking confirmation</li>
+                        <li>70% before or on arrival</li>
+                        <li>Multiple payment methods: Bank Transfer, eSewa, Khalti</li>
+                    </ul>
+                </div>
+
+                <div class="terms-section">
+                    <h3>Cancellation Policy</h3>
+                    <ul>
+                        <li>30+ days before departure: Full refund (minus admin fee)</li>
+                        <li>15–30 days before: 50% refund</li>
+                        <li>Less than 15 days: No refund</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: PAYMENTS ==================== -->
+            <div class="tab-panel" *ngIf="activeTab === 3">
+                <h2 class="section-title"><i class="pi pi-wallet"></i> Payments</h2>
+
+                <!-- Payment History -->
+                <div *ngIf="payments.length > 0" class="payment-history">
+                    <h3>Payment History</h3>
+                    <div *ngFor="let p of payments" class="ph-row">
+                        <div class="ph-info">
+                            <span class="ph-type">{{ p.paymentType }}</span>
+                            <span class="ph-date">{{ p.createdAt | date:'dd MMM yyyy, h:mm a' }}</span>
+                        </div>
+                        <div class="ph-right">
+                            <span class="ph-amount">NPR {{ p.amount | number:'1.2-2' }}</span>
+                            <span class="ph-badge" [class.verified]="p.status === 'Verified'" [class.pending]="p.status === 'Pending'" [class.rejected]="p.status === 'Rejected'">{{ p.status }}</span>
+                        </div>
+                    </div>
+                    <div class="ph-summary">
+                        <span>Verified: <strong>NPR {{ totalPaid | number:'1.2-2' }}</strong></span>
+                        <span>Remaining: <strong>NPR {{ remainingBalance | number:'1.2-2' }}</strong></span>
+                    </div>
+                </div>
+
+                <!-- New Payment Flow -->
+                <div *ngIf="proposal.status !== 'Confirmed' && proposal.status !== 'PaymentSubmitted'">
+                    <!-- Step: Choose -->
+                    <div *ngIf="paymentStep === 'choose'" class="pay-section">
+                        <div class="pay-amount-box">
+                            <label>Amount Due</label>
+                            <strong>NPR {{ remainingBalance | number:'1.2-2' }}</strong>
+                        </div>
+
+                        <h3 class="mb-3">Payment Type</h3>
+                        <div class="pay-type-cards">
+                            <div class="pay-type-card" [class.selected]="paymentType === 'full'" (click)="selectPaymentType('full')">
+                                <i class="pi pi-check-circle"></i>
+                                <h4>Full Payment</h4>
+                                <p>NPR {{ remainingBalance | number:'1.0-0' }}</p>
+                            </div>
+                            <div class="pay-type-card" [class.selected]="paymentType === 'partial'" (click)="selectPaymentType('partial')">
+                                <i class="pi pi-percentage"></i>
+                                <h4>Partial (30%)</h4>
+                                <div *ngIf="paymentType === 'partial'" class="mt-2">
+                                    <p-inputNumber [(ngModel)]="partialAmount" mode="decimal" [min]="1" [max]="remainingBalance"
+                                        prefix="NPR " [minFractionDigits]="0" class="w-full"></p-inputNumber>
+                                </div>
+                            </div>
+                            <div class="pay-type-card" [class.selected]="paymentType === 'later'" (click)="selectPaymentType('later')">
+                                <i class="pi pi-clock"></i>
+                                <h4>Pay Later</h4>
+                                <p>Confirm now, pay before trip</p>
+                            </div>
+                        </div>
+
+                        <h3 class="mt-4 mb-3">Payment Method</h3>
+                        <div class="pay-method-cards">
+                            <div class="pay-method-card" [class.selected]="paymentMethod === 'bank'" (click)="selectPaymentMethod('bank')">
+                                <i class="pi pi-building"></i>
+                                <span>Bank Transfer / QR</span>
+                            </div>
+                            <div class="pay-method-card esewa" [class.selected]="paymentMethod === 'esewa'" (click)="selectPaymentMethod('esewa')">
+                                <i class="pi pi-mobile"></i>
+                                <span>eSewa</span>
+                            </div>
+                            <div class="pay-method-card khalti" [class.selected]="paymentMethod === 'khalti'" (click)="selectPaymentMethod('khalti')">
+                                <i class="pi pi-credit-card"></i>
+                                <span>Khalti</span>
+                            </div>
+                            <div class="pay-method-card" [class.selected]="paymentMethod === 'card'" (click)="selectPaymentMethod('card')">
+                                <i class="pi pi-credit-card"></i>
+                                <span>Card</span>
+                            </div>
+                        </div>
+
+                        <div class="text-center mt-4">
+                            <button pButton
+                                [label]="paymentType === 'later' ? 'Confirm Booking (Pay Later)' : 'Proceed to Pay NPR ' + (payableAmount | number:'1.0-0')"
+                                icon="pi pi-arrow-right" iconPos="right"
+                                class="p-button-lg p-button-success"
+                                [loading]="submittingPayment"
+                                (click)="paymentMethod === 'esewa' ? payWithEsewa() : paymentMethod === 'khalti' ? payWithKhalti() : proceedToPay()">
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Step: Pay (Bank Transfer) -->
+                    <div *ngIf="paymentStep === 'pay'" class="pay-section">
+                        <div class="pay-amount-box">
+                            <label>Amount to Pay</label>
+                            <strong>NPR {{ payableAmount | number:'1.2-2' }}</strong>
+                        </div>
+
+                        <div class="qr-display">
+                            <img [src]="qrImageUrl" alt="Payment QR" width="200" height="200" />
+                            <div class="qr-info">
+                                <p><strong>{{ accountName }}</strong></p>
+                                <p>A/C: {{ accountNumber }}</p>
+                                <p>{{ bankName }}</p>
+                            </div>
+                        </div>
+
+                        <div class="upload-section">
+                            <h4><i class="pi pi-upload"></i> Upload Payment Screenshot</h4>
+                            <p class="text-sm" style="color: var(--text-color-secondary);">After payment, upload screenshot for verification.</p>
+
+                            <div class="upload-area" (click)="fileInput.click()" *ngIf="!previewUrl">
+                                <i class="pi pi-cloud-upload"></i>
+                                <p>Click to upload</p>
+                                <small>JPG, PNG, WebP — Max 5MB</small>
+                            </div>
+                            <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+
+                            <div *ngIf="previewUrl" class="preview-area">
+                                <img [src]="previewUrl" alt="Preview" />
+                                <button pButton icon="pi pi-times" class="p-button-danger p-button-sm p-button-rounded remove-btn" (click)="removeFile()"></button>
+                            </div>
+
+                            <div class="mt-3">
+                                <label class="block mb-1 text-sm">Transaction Reference (optional)</label>
+                                <input pInputText [(ngModel)]="transactionReference" class="w-full" placeholder="e.g., TXN-12345" />
+                            </div>
+                        </div>
+
+                        <div class="flex justify-center gap-3 mt-4">
+                            <button pButton label="Back" icon="pi pi-arrow-left" class="p-button-text" (click)="paymentStep = 'choose'"></button>
+                            <button pButton label="Submit Payment" icon="pi pi-check" class="p-button-success p-button-lg" [loading]="submittingPayment" (click)="submitPaymentWithScreenshot()"></button>
+                        </div>
+                    </div>
+
+                    <!-- Step: Success -->
+                    <div *ngIf="paymentStep === 'success'" class="pay-success">
+                        <i class="pi pi-check-circle"></i>
+                        <h2>Payment Submitted!</h2>
+                        <p *ngIf="paymentType !== 'later'">NPR {{ payableAmount | number:'1.2-2' }} submitted. We'll verify and confirm shortly.</p>
+                        <p *ngIf="paymentType === 'later'">Your booking is noted. Please pay before your trip.</p>
+                        <button pButton label="Make Another Payment" icon="pi pi-plus" class="p-button-outlined mt-3" (click)="resetPayment()"></button>
+                    </div>
+                </div>
+
+                <div *ngIf="proposal.status === 'Confirmed'" class="pay-confirmed-msg">
+                    <i class="pi pi-check-circle"></i>
+                    <h3>All payments verified. Your booking is confirmed!</h3>
+                </div>
+            </div>
+
+            <!-- ==================== TAB: INVOICE ==================== -->
+            <div class="tab-panel" *ngIf="activeTab === 4">
+                <div *ngIf="loadingInvoice" class="text-center py-8">
+                    <p-progressSpinner [style]="{ width: '40px', height: '40px' }" strokeWidth="4"></p-progressSpinner>
+                </div>
+
+                <div *ngIf="!loadingInvoice && invoiceData" class="invoice-container" id="invoice-print">
+                    <div class="invoice-header">
+                        <div>
+                            <h2 class="invoice-brand">TNT Nepal</h2>
+                            <p class="text-sm" style="color: var(--text-color-secondary);">Kathmandu, Nepal</p>
+                        </div>
+                        <div class="text-right">
+                            <h2 class="invoice-title">INVOICE</h2>
+                            <p class="text-sm">{{ invoiceData.invoiceNumber }}</p>
+                            <p class="text-sm">{{ invoiceData.generatedAt | date:'dd MMM yyyy' }}</p>
+                        </div>
+                    </div>
+
+                    <p-divider></p-divider>
+
+                    <div class="invoice-details">
+                        <div>
+                            <label>Billed To</label>
+                            <p><strong>{{ proposal.travelerName }}</strong></p>
+                            <p>{{ proposal.travelerEmail }}</p>
+                            <p *ngIf="proposal.travelerPhone">{{ proposal.travelerPhone }}</p>
+                        </div>
+                        <div class="text-right">
+                            <label>Trip</label>
+                            <p><strong>{{ proposal.itineraryTitle }}</strong></p>
+                            <p>{{ proposal.startDate | date:'dd MMM' }} – {{ proposal.endDate | date:'dd MMM yyyy' }}</p>
+                        </div>
+                    </div>
+
+                    <table class="invoice-table">
+                        <thead>
+                            <tr>
+                                <th>Description</th>
+                                <th class="text-right">Amount</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>{{ proposal.itineraryTitle }} — {{ proposal.days.length }} Days ({{ proposal.startDate | date:'dd MMM' }} – {{ proposal.endDate | date:'dd MMM yyyy' }})</td>
+                                <td class="text-right">NPR {{ proposal.totalAmount | number:'1.2-2' }}</td>
+                            </tr>
+                        </tbody>
+                        <tfoot>
+                            <tr>
+                                <td><strong>Total</strong></td>
+                                <td class="text-right"><strong>NPR {{ proposal.totalAmount | number:'1.2-2' }}</strong></td>
+                            </tr>
+                        </tfoot>
+                    </table>
+
+                    <div *ngIf="invoiceData.payments?.length" class="invoice-payments">
+                        <h4>Payments Received</h4>
+                        <div *ngFor="let p of invoiceData.payments" class="inv-pay-row">
+                            <span>{{ p.paymentType }} — {{ p.createdAt | date:'dd MMM yyyy' }}</span>
+                            <span>NPR {{ p.amount | number:'1.2-2' }} ({{ p.status }})</span>
+                        </div>
+                    </div>
+
+                    <div class="invoice-footer">
+                        <p>Thank you for choosing TNT Nepal!</p>
+                        <p class="text-sm" style="color: var(--text-color-secondary);">This is a system-generated invoice.</p>
+                    </div>
+
+                    <div class="text-center mt-4 no-print">
+                        <button pButton label="Print Invoice" icon="pi pi-print" class="p-button-outlined" (click)="printInvoice()"></button>
+                    </div>
+                </div>
+
+                <div *ngIf="!loadingInvoice && !invoiceData && proposal.status === 'Confirmed'" class="empty-state-small">
+                    <p>Unable to load invoice. Please try again.</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- FOOTER -->
+        <div class="portal-footer">
+            <p>Have questions? <a (click)="openFeedbackDialog()" class="cursor-pointer" style="color: var(--primary-color);">Send us a message</a></p>
+            <p class="text-sm" style="color: var(--text-color-secondary);">© TNT Nepal · All Rights Reserved</p>
+        </div>
+    </div>
+</div>
+
+<!-- Feedback Dialog -->
+<p-dialog header="Request Changes" [(visible)]="showFeedbackDialog" [modal]="true" [style]="{ width: '500px' }" [closable]="true">
+    <div class="p-3">
+        <p class="mb-3" style="color: var(--text-color-secondary);">Tell us what you'd like changed in the itinerary. We'll review and send an updated proposal.</p>
+        <textarea pTextarea [(ngModel)]="feedbackMessage" rows="5" class="w-full"
+            placeholder="E.g., Add an extra day in Pokhara, change hotel on Day 3..."></textarea>
+    </div>
+    <ng-template pTemplate="footer">
+        <button pButton label="Cancel" class="p-button-text" (click)="showFeedbackDialog = false"></button>
+        <button pButton label="Submit Feedback" icon="pi pi-send" [loading]="submittingFeedback" (click)="submitFeedback()"></button>
+    </ng-template>
+</p-dialog>

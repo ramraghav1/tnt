@@ -1,0 +1,71 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <div class="flex items-center justify-between mb-4">
+        <h2 class="m-0"><i class="pi pi-send mr-2"></i>Itinerary Proposals</h2>
+        <button pButton label="New Proposal" icon="pi pi-plus" (click)="newProposal()"></button>
+    </div>
+
+    <div *ngIf="loading" class="flex justify-center py-6">
+        <p-progressSpinner [style]="{ width: '40px', height: '40px' }" strokeWidth="4"></p-progressSpinner>
+    </div>
+
+    <p-table #dt *ngIf="!loading" [value]="proposals" [rows]="15" [paginator]="true"
+        [globalFilterFields]="['travelerName','travelerEmail','itineraryTitle','status']"
+        [rowHover]="true" dataKey="id" [showCurrentPageReport]="true"
+        currentPageReportTemplate="Showing {first} to {last} of {totalRecords}">
+
+        <ng-template pTemplate="caption">
+            <div class="flex items-center justify-between">
+                <span class="text-gray-500">{{ proposals.length }} proposals total</span>
+                <input pInputText type="text" [(ngModel)]="globalFilter" placeholder="Search..."
+                    style="width: 250px;" (input)="dt.filterGlobal($event.target.value, 'contains')" />
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="travelerName">Traveler <p-sortIcon field="travelerName"></p-sortIcon></th>
+                <th pSortableColumn="itineraryTitle">Itinerary <p-sortIcon field="itineraryTitle"></p-sortIcon></th>
+                <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+                <th pSortableColumn="startDate">Dates <p-sortIcon field="startDate"></p-sortIcon></th>
+                <th pSortableColumn="totalAmount" class="text-right">Amount <p-sortIcon field="totalAmount"></p-sortIcon></th>
+                <th pSortableColumn="createdAt">Sent <p-sortIcon field="createdAt"></p-sortIcon></th>
+                <th style="width: 120px;">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-p>
+            <tr>
+                <td>
+                    <div class="font-semibold">{{ p.travelerName }}</div>
+                    <div class="text-sm text-gray-400">{{ p.travelerEmail }}</div>
+                </td>
+                <td>{{ p.itineraryTitle }}</td>
+                <td><p-tag [value]="p.status" [severity]="getStatusSeverity(p.status)"></p-tag></td>
+                <td>
+                    <div class="text-sm">{{ p.startDate | date:'MMM d' }} — {{ p.endDate | date:'MMM d, yyyy' }}</div>
+                </td>
+                <td class="text-right font-semibold">NPR {{ p.totalAmount | number:'1.0-0' }}</td>
+                <td class="text-sm">{{ p.createdAt | date:'MMM d, yyyy' }}</td>
+                <td>
+                    <div class="flex gap-1">
+                        <button pButton icon="pi pi-eye" class="p-button-text p-button-rounded p-button-sm"
+                            pTooltip="View Details" (click)="viewDetail(p)"></button>
+                        <button pButton icon="pi pi-refresh" class="p-button-text p-button-rounded p-button-sm"
+                            pTooltip="Re-customize & Resend" (click)="resend(p)"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center py-6">
+                    <i class="pi pi-inbox text-4xl text-gray-300 mb-3 block"></i>
+                    <p class="text-gray-400">No proposals yet. Send one from the itinerary list!</p>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

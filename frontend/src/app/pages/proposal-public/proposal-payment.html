@@ -1,0 +1,151 @@
+<p-toast></p-toast>
+
+<div class="payment-public-page">
+    <!-- Loading -->
+    <div *ngIf="loading" class="flex justify-center items-center" style="min-height: 400px;">
+        <p-progressSpinner [style]="{ width: '50px', height: '50px' }" strokeWidth="4"></p-progressSpinner>
+    </div>
+
+    <!-- Not Found -->
+    <div *ngIf="!loading && !proposal" class="text-center py-8">
+        <i class="pi pi-exclamation-triangle text-6xl text-orange-400 mb-4 block"></i>
+        <h2>Proposal Not Found</h2>
+        <p class="text-gray-500">This link may be invalid or expired.</p>
+    </div>
+
+    <div *ngIf="!loading && proposal">
+        <!-- Header -->
+        <div class="payment-header">
+            <button pButton icon="pi pi-arrow-left" label="Back to Proposal" class="p-button-text" (click)="goBackToProposal()"></button>
+            <h2><i class="pi pi-wallet mr-2"></i>Payment</h2>
+            <p class="text-gray-500">{{ proposal.itineraryTitle }} — {{ proposal.travelerName }}</p>
+        </div>
+
+        <!-- Existing Payments -->
+        <div *ngIf="existingPayments.length > 0" class="existing-payments mb-4">
+            <h3><i class="pi pi-history mr-2"></i>Previous Payments</h3>
+            <div *ngFor="let p of existingPayments" class="prev-payment-row">
+                <span>NPR {{ p.amount | number:'1.2-2' }} ({{ p.paymentType }})</span>
+                <span class="status-badge" [class.verified]="p.status === 'Verified'" [class.pending]="p.status === 'Pending'" [class.rejected]="p.status === 'Rejected'">
+                    {{ p.status }}
+                </span>
+            </div>
+            <div class="prev-payment-summary">
+                <span>Paid: NPR {{ totalPaid | number:'1.2-2' }}</span>
+                <span>Remaining: NPR {{ remainingBalance | number:'1.2-2' }}</span>
+            </div>
+        </div>
+
+        <!-- Step 1: Choose Payment Type -->
+        <div *ngIf="step === 'choose'" class="payment-options">
+            <div class="amount-display">
+                <span>Total Amount</span>
+                <strong>NPR {{ proposal.totalAmount | number:'1.2-2' }}</strong>
+            </div>
+
+            <h3>Choose Payment Option</h3>
+
+            <div class="option-cards">
+                <div class="option-card" [class.selected]="paymentType === 'full'" (click)="selectPaymentType('full')">
+                    <div class="option-icon"><i class="pi pi-check-circle"></i></div>
+                    <h4>Full Payment</h4>
+                    <p>Pay the full amount now</p>
+                    <strong class="option-amount">NPR {{ proposal.totalAmount | number:'1.0-0' }}</strong>
+                </div>
+
+                <div class="option-card" [class.selected]="paymentType === 'partial'" (click)="selectPaymentType('partial')">
+                    <div class="option-icon"><i class="pi pi-percentage"></i></div>
+                    <h4>Partial Payment</h4>
+                    <p>Pay a deposit now, rest later</p>
+                    <div *ngIf="paymentType === 'partial'" class="mt-2">
+                        <p-inputNumber [(ngModel)]="partialAmount" mode="decimal" [min]="1" [max]="proposal.totalAmount"
+                            prefix="NPR " [minFractionDigits]="0" [maxFractionDigits]="2" class="w-full"></p-inputNumber>
+                    </div>
+                </div>
+
+                <div class="option-card" [class.selected]="paymentType === 'later'" (click)="selectPaymentType('later')">
+                    <div class="option-icon"><i class="pi pi-clock"></i></div>
+                    <h4>Pay Later</h4>
+                    <p>Confirm booking now, pay before trip</p>
+                    <strong class="option-amount text-gray-400">NPR 0</strong>
+                </div>
+            </div>
+
+            <div class="text-center mt-4">
+                <button pButton
+                    [label]="paymentType === 'later' ? 'Confirm Booking (Pay Later)' : 'Proceed to Pay'"
+                    icon="pi pi-arrow-right" iconPos="right"
+                    class="p-button-lg"
+                    [loading]="submitting"
+                    (click)="proceedToQR()">
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: QR Code & Upload -->
+        <div *ngIf="step === 'qr'" class="qr-section">
+            <div class="qr-amount">
+                <span>Amount to Pay:</span>
+                <strong>NPR {{ payableAmount | number:'1.2-2' }}</strong>
+            </div>
+
+            <div class="qr-display">
+                <img [src]="qrImageUrl" alt="Payment QR Code" width="220" height="220" />
+                <div class="qr-info">
+                    <p><strong>{{ accountName }}</strong></p>
+                    <p>A/C: {{ accountNumber }}</p>
+                    <p>{{ bankName }}</p>
+                </div>
+            </div>
+
+            <div class="upload-section">
+                <h3><i class="pi pi-upload mr-2"></i>Upload Payment Screenshot</h3>
+                <p class="text-gray-500 text-sm">After making the payment, upload a screenshot for verification.</p>
+
+                <div class="upload-area" (click)="fileInput.click()" *ngIf="!previewUrl">
+                    <i class="pi pi-cloud-upload"></i>
+                    <p>Click to upload screenshot</p>
+                    <small>JPG, PNG, WebP — Max 5MB</small>
+                </div>
+
+                <input #fileInput type="file" accept="image/*" (change)="onFileSelected($event)" style="display: none;" />
+
+                <div *ngIf="previewUrl" class="preview-area">
+                    <img [src]="previewUrl" alt="Payment screenshot preview" />
+                    <button pButton icon="pi pi-times" class="p-button-danger p-button-sm p-button-rounded remove-btn" (click)="removeFile()"></button>
+                </div>
+
+                <div class="mt-3">
+                    <label class="block mb-1 text-sm">Transaction Reference (optional)</label>
+                    <input pInputText [(ngModel)]="transactionReference" class="w-full" placeholder="e.g., TXN-12345" />
+                </div>
+            </div>
+
+            <div class="flex justify-center gap-3 mt-4">
+                <button pButton label="Back" icon="pi pi-arrow-left" class="p-button-text" (click)="step = 'choose'"></button>
+                <button pButton label="I Have Paid — Submit" icon="pi pi-check"
+                    class="p-button-lg p-button-success"
+                    [loading]="submitting"
+                    (click)="submitPaymentWithScreenshot()">
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 3: Success -->
+        <div *ngIf="step === 'success'" class="success-section">
+            <div class="success-icon">
+                <i class="pi pi-check-circle"></i>
+            </div>
+            <h2>Payment Submitted!</h2>
+            <p *ngIf="paymentType !== 'later'">
+                Your payment of <strong>NPR {{ payableAmount | number:'1.2-2' }}</strong> has been submitted.
+                Our team will verify and confirm your booking shortly.
+            </p>
+            <p *ngIf="paymentType === 'later'">
+                Your booking has been noted. Please make the payment before your trip start date.
+            </p>
+            <p class="text-gray-400 text-sm">You'll receive a confirmation email once verified.</p>
+            <button pButton label="Back to Proposal" icon="pi pi-arrow-left" class="p-button-outlined mt-3" (click)="goBackToProposal()"></button>
+        </div>
+    </div>
+</div>

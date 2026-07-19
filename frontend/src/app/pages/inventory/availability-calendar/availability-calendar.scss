@@ -1,0 +1,10 @@
+:host ::ng-deep {
+    .p-dropdown,
+    .p-calendar {
+        width: 100%;
+
+        input {
+            width: 100%;
+        }
+    }
+}

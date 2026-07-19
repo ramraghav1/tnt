@@ -1,0 +1,462 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<!-- Loading Spinner -->
+<div *ngIf="loading" class="flex justify-center items-center" style="min-height: 60vh">
+    <p-progressSpinner strokeWidth="4" animationDuration=".8s" />
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!loading && itinerary" class="booking-page">
+
+    <!-- CARD 1: Header + Customize Daily Plan -->
+    <div class="section-card mb-4">
+        <div class="flex items-center gap-3 mb-3">
+            <button pButton icon="pi pi-arrow-left" severity="secondary" [outlined]="true" size="small"
+                    [pTooltip]="'common.back' | translate" tooltipPosition="right"
+                    (click)="goBack()"></button>
+            <div class="flex-1 min-w-0">
+                <h2 class="text-xl font-bold m-0" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ itinerary.title }}</h2>
+                <p class="text-surface-500 text-sm m-0 mt-1" style="white-space:nowrap;overflow:hidden;text-overflow:ellipsis">{{ itinerary.description }}</p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <p-tag icon="pi pi-calendar" [value]="itinerary.durationDays + ' days'" severity="info"></p-tag>
+                <p-tag icon="pi pi-chart-line" [value]="itinerary.difficultyLevel"
+                       [severity]="getDifficultySeverity(itinerary.difficultyLevel)"></p-tag>
+            </div>
+        </div>
+        <p-divider styleClass="my-3"></p-divider>
+
+        <div class="section-header">
+            <div class="section-number">1</div>
+            <div>
+                <h3 class="section-title">Customize Daily Plan</h3>
+                <p class="section-subtitle">Modify each day's details as needed</p>
+            </div>
+            <div class="toggle-btns ml-auto">
+                <button pButton label="Expand All" icon="pi pi-angle-double-down" class="p-button-text p-button-sm" (click)="expandAllDays()"></button>
+                <button pButton label="Collapse All" icon="pi pi-angle-double-up" class="p-button-text p-button-sm" (click)="collapseAllDays()"></button>
+            </div>
+        </div>
+
+        <div class="day-list">
+            <div *ngFor="let day of editableDays; let i = index" class="day-card">
+                <!-- Day Card Header -->
+                <div class="day-card-header" (click)="toggleDayAccordion(i)">
+                    <div class="flex align-items-center gap-3">
+                        <span class="day-number-badge">{{ day.dayNumber }}</span>
+                        <div>
+                            <span class="day-card-title">Day {{ day.dayNumber }}{{ day.title ? ': ' + day.title : '' }}</span>
+                            <span *ngIf="day.location" class="day-card-location">
+                                <i class="pi pi-map-marker"></i> {{ day.location }}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="pi day-chevron" [class.pi-chevron-down]="collapsedDayMap[i]" [class.pi-chevron-up]="!collapsedDayMap[i]"></i>
+                </div>
+
+                <!-- Day Card Content -->
+                <div *ngIf="!collapsedDayMap[i]" class="day-card-content">
+                    <!-- Row 1: Title & Location -->
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label class="field-label">Title</label>
+                            <input pInputText [(ngModel)]="day.title" placeholder="Day title" />
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">Location</label>
+                            <input pInputText [(ngModel)]="day.location" placeholder="Location" />
+                        </div>
+                    </div>
+
+                    <!-- Row 2: Accommodation & Transport -->
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label class="field-label">Accommodation</label>
+                            <input pInputText [(ngModel)]="day.accommodation" placeholder="Accommodation" />
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">Transport</label>
+                            <input pInputText [(ngModel)]="day.transport" placeholder="Transport" />
+                        </div>
+                    </div>
+
+                    <!-- Meals -->
+                    <div class="form-row">
+                        <div class="form-field-full">
+                            <label class="field-label">Meals Included</label>
+                            <div class="meals-row">
+                                <div class="meal-item">
+                                    <p-checkbox [(ngModel)]="day.breakfastIncluded" [binary]="true" (ngModelChange)="onMealChange(i, 'Breakfast', $event)"></p-checkbox>
+                                    <span>Breakfast</span>
+                                </div>
+                                <div class="meal-item">
+                                    <p-checkbox [(ngModel)]="day.lunchIncluded" [binary]="true" (ngModelChange)="onMealChange(i, 'Lunch', $event)"></p-checkbox>
+                                    <span>Lunch</span>
+                                </div>
+                                <div class="meal-item">
+                                    <p-checkbox [(ngModel)]="day.dinnerIncluded" [binary]="true" (ngModelChange)="onMealChange(i, 'Dinner', $event)"></p-checkbox>
+                                    <span>Dinner</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activities -->
+                    <div class="form-row">
+                        <div class="form-field-full">
+                            <label class="field-label">Activities</label>
+                            <div class="flex flex-wrap gap-2 mb-2" *ngIf="day.activities.length > 0">
+                                <p-chip *ngFor="let activity of day.activities; let ai = index"
+                                        [label]="activity"
+                                        [removable]="true"
+                                        (onRemove)="onActivityRemove(day, ai)">
+                                </p-chip>
+                            </div>
+                            <div class="flex gap-2">
+                                <input pInputText [(ngModel)]="day.newActivity" placeholder="Add activity"
+                                       (keyup.enter)="onActivityAdd(day)" class="flex-1" />
+                                <button pButton icon="pi pi-plus" class="p-button-outlined p-button-sm" (click)="onActivityAdd(day)"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 2: Booking Information -->
+    <div class="section-card mb-4">
+        <div class="section-header mb-0">
+            <div class="section-number">2</div>
+            <div>
+                <h3 class="section-title">Booking Information</h3>
+                <p class="section-subtitle">Your contact details and travel dates</p>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label class="field-label">Booker Name *</label>
+                <input pInputText [(ngModel)]="bookerName" placeholder="Full name"/>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Contact Number</label>
+                <input pInputText [(ngModel)]="bookerPhone" placeholder="Phone number"/>
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="form-field">
+                <label class="field-label">Email</label>
+                <input pInputText [(ngModel)]="bookerEmail" placeholder="Email address"/>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Address</label>
+                <input pInputText [(ngModel)]="bookerAddress" placeholder="Address"/>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field-full">
+                <div class="iamtraveller-row">
+                    <p-checkbox [(ngModel)]="iAmTraveller" [binary]="true" (ngModelChange)="onIAmTravellerChange()" inputId="iat"></p-checkbox>
+                    <label for="iat" class="cursor-pointer font-medium text-sm">I am also Traveller 1 — copy my details</label>
+                </div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label class="field-label">Start Date *</label>
+                <p-datepicker [(ngModel)]="startDate" [showIcon]="true" dateFormat="dd/mm/yy"
+                              placeholder="Select start date" (ngModelChange)="onStartDateChange()"
+                              styleClass="w-full"></p-datepicker>
+            </div>
+            <div class="form-field">
+                <label class="field-label">End Date *</label>
+                <p-datepicker [(ngModel)]="endDate" [showIcon]="true" dateFormat="dd/mm/yy"
+                              placeholder="Select end date" [minDate]="minEndDate"
+                              styleClass="w-full"></p-datepicker>
+            </div>
+        </div>
+
+        <div class="form-row mb-1">
+            <div class="form-field-full">
+                <label class="field-label mb-2">Traveller Input Mode</label>
+                <div class="booking-mode-row">
+                    <div class="mode-option" [class.mode-active]="bookingMode === 'single'" (click)="setBookingMode('single')">
+                        <i class="pi pi-user"></i>
+                        <div><strong>Single Booker Info</strong><small>Use only booker details for all travellers</small></div>
+                    </div>
+                    <div class="mode-option" [class.mode-active]="bookingMode === 'all'" (click)="setBookingMode('all')">
+                        <i class="pi pi-users"></i>
+                        <div><strong>All Travellers Info</strong><small>Fill individual details per traveller</small></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Pax count — only in single-booker mode -->
+        <div class="form-row" *ngIf="bookingMode === 'single'">
+            <div class="form-field">
+                <label class="field-label">Adults</label>
+                <div class="pax-counter">
+                    <button pButton icon="pi pi-minus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleAdults = singleAdults > 1 ? singleAdults - 1 : 1"></button>
+                    <span class="pax-value">{{ singleAdults }}</span>
+                    <button pButton icon="pi pi-plus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleAdults = singleAdults + 1"></button>
+                </div>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Children</label>
+                <div class="pax-counter">
+                    <button pButton icon="pi pi-minus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleChildren = singleChildren > 0 ? singleChildren - 1 : 0"></button>
+                    <span class="pax-value">{{ singleChildren }}</span>
+                    <button pButton icon="pi pi-plus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleChildren = singleChildren + 1"></button>
+                </div>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Seniors</label>
+                <div class="pax-counter">
+                    <button pButton icon="pi pi-minus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleSeniors = singleSeniors > 0 ? singleSeniors - 1 : 0"></button>
+                    <span class="pax-value">{{ singleSeniors }}</span>
+                    <button pButton icon="pi pi-plus" class="p-button-outlined p-button-sm pax-btn"
+                            (click)="singleSeniors = singleSeniors + 1"></button>
+                </div>
+            </div>
+            <div class="form-field" style="justify-content:flex-end">
+                <label class="field-label">Total Travellers</label>
+                <div class="pax-total">{{ singleAdults + singleChildren + singleSeniors }}</div>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field-full">
+                <label class="field-label">Special Requests</label>
+                <textarea pTextarea [(ngModel)]="specialRequests" rows="2" placeholder="Any special requests or notes..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 3: Travellers (only in 'all' mode) -->
+    <div class="section-card mb-4" *ngIf="bookingMode === 'all'">
+        <div class="section-header">
+            <div class="section-number">3</div>
+            <div>
+                <h3 class="section-title">Travellers</h3>
+                <p class="section-subtitle">Details for each traveller</p>
+            </div>
+            <div class="toggle-btns ml-auto">
+                <button pButton icon="pi pi-plus" label="Add Traveller" class="p-button-outlined p-button-sm" (click)="addTraveler()"></button>
+            </div>
+        </div>
+
+        <div class="traveler-list">
+            <div *ngFor="let traveler of travelers; let ti = index" class="traveler-card-compact">
+                <div class="traveler-compact-header">
+                    <div class="flex items-center gap-2">
+                        <span class="traveler-badge">{{ ti + 1 }}</span>
+                        <span class="font-semibold text-sm">Traveller {{ ti + 1 }}{{ traveler.fullName ? ': ' + traveler.fullName : '' }}</span>
+                    </div>
+                    <div class="flex items-center gap-1">
+                        <span *ngIf="ti === 0 && iAmTraveller" class="booker-tag">Booker</span>
+                        <button *ngIf="travelers.length > 1" pButton icon="pi pi-trash"
+                                class="p-button-text p-button-danger p-button-sm"
+                                style="padding:0.25rem"
+                                (click)="removeTraveler(ti); $event.stopPropagation()"></button>
+                        <button pButton [icon]="collapsedTravelerMap[ti] ? 'pi pi-chevron-down' : 'pi pi-chevron-up'"
+                                class="p-button-text p-button-sm" style="padding:0.25rem"
+                                (click)="toggleTravelerAccordion(ti)"></button>
+                    </div>
+                </div>
+                <div *ngIf="!collapsedTravelerMap[ti]" class="traveler-compact-body">
+                    <div class="traveler-inline-row">
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Full Name *</label>
+                            <input pInputText [(ngModel)]="traveler.fullName" placeholder="Full name" class="compact-input"/>
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Contact</label>
+                            <input pInputText [(ngModel)]="traveler.contactNumber" placeholder="Phone" class="compact-input"/>
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Email</label>
+                            <input pInputText [(ngModel)]="traveler.email" placeholder="Email" class="compact-input"/>
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Nationality</label>
+                            <input pInputText [(ngModel)]="traveler.nationality" placeholder="Nationality" class="compact-input"/>
+                        </div>
+                    </div>
+                    <div class="traveller-type-row">
+                        <label class="field-label-sm">Type:</label>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="traveler.isAdult"  [binary]="true" (ngModelChange)="onTravelerTypeChange(traveler,'adult',$event)"  [inputId]="'ta_'+ti"></p-checkbox>
+                            <label [for]="'ta_'+ti">Adult</label>
+                        </div>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="traveler.isChild"  [binary]="true" (ngModelChange)="onTravelerTypeChange(traveler,'child',$event)"  [inputId]="'tc_'+ti"></p-checkbox>
+                            <label [for]="'tc_'+ti">Child</label>
+                        </div>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="traveler.isSenior" [binary]="true" (ngModelChange)="onTravelerTypeChange(traveler,'senior',$event)" [inputId]="'ts_'+ti"></p-checkbox>
+                            <label [for]="'ts_'+ti">Senior</label>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 4a: Cost Breakdown (if configured) -->
+    <div class="section-card mb-4" *ngIf="hasCosts()">
+        <div class="section-header">
+            <div class="section-number">{{ bookingMode === 'all' ? '4' : '3' }}</div>
+            <div>
+                <h3 class="section-title">Cost Breakdown</h3>
+                <p class="section-subtitle">Review and adjust pricing per day</p>
+            </div>
+            <div class="toggle-btns ml-auto">
+                <button pButton [label]="costEditMode ? 'Done Editing' : 'Update Cost'"
+                        [icon]="costEditMode ? 'pi pi-check' : 'pi pi-pencil'"
+                        [class]="costEditMode ? 'p-button-success p-button-sm' : 'p-button-outlined p-button-sm'"
+                        (click)="toggleCostEdit()"></button>
+            </div>
+        </div>
+
+        <div class="pricing-table">
+            <div *ngFor="let dayCost of bookingDayCosts; let di = index" class="pricing-day-block">
+                <div class="pricing-day-header" *ngIf="dayCost.costs.length > 0">
+                    <span>Day {{ dayCost.dayNumber }}{{ dayCost.title ? ': ' + dayCost.title : '' }}</span>
+                    <span class="pricing-day-total">Rs. {{ getBookingDayTotal(di) }}</span>
+                </div>
+
+                <!-- Read-only mode -->
+                <ng-container *ngIf="!costEditMode">
+                    <div *ngFor="let cost of dayCost.costs" class="pricing-item" [class.pricing-item-disabled]="!cost.enabled">
+                        <div class="pricing-item-name">
+                            <span>{{ cost.name }}</span>
+                            <span class="pricing-item-cat">{{ cost.category }}</span>
+                        </div>
+                        <div class="pricing-item-calc">Rs. {{ cost.price }}</div>
+                    </div>
+                </ng-container>
+
+                <!-- Edit mode -->
+                <ng-container *ngIf="costEditMode">
+                    <div *ngFor="let cost of dayCost.costs; let ci = index" class="pricing-item-edit">
+                        <div class="pricing-edit-left">
+                            <p-checkbox [(ngModel)]="cost.enabled" [binary]="true"></p-checkbox>
+                            <input pInputText [(ngModel)]="cost.name" class="cost-edit-name" [disabled]="!cost.enabled" />
+                            <span class="pricing-item-cat">{{ cost.category }}</span>
+                        </div>
+                        <div class="pricing-edit-right">
+                            <span class="cost-currency-label">Rs.</span>
+                            <input pInputText type="number" [(ngModel)]="cost.price" class="cost-edit-price" [disabled]="!cost.enabled" />
+                            <button pButton icon="pi pi-times" class="p-button-text p-button-danger p-button-sm" (click)="removeCostRow(di, ci)"></button>
+                        </div>
+                    </div>
+                    <div class="pricing-add-row">
+                        <button pButton label="Add Cost Item" icon="pi pi-plus" class="p-button-text p-button-sm" (click)="addCostRow(di)"></button>
+                    </div>
+                </ng-container>
+            </div>
+
+            <!-- Discount Section -->
+            <div class="discount-section">
+                <div class="discount-header">
+                    <span class="discount-label">Discount</span>
+                    <div class="discount-controls">
+                        <select [(ngModel)]="discountType" class="discount-select">
+                            <option value="percent">Percent (%)</option>
+                            <option value="flat">Flat (Rs.)</option>
+                        </select>
+                        <input pInputText type="number" [(ngModel)]="discountValue" class="discount-input" placeholder="0" [min]="0" />
+                    </div>
+                </div>
+                <div class="discount-row" *ngIf="discountValue > 0">
+                    <span>Subtotal</span>
+                    <span>Rs. {{ getSubtotal() }}</span>
+                </div>
+                <div class="discount-row" *ngIf="discountValue > 0">
+                    <span>Discount ({{ discountType === 'percent' ? discountValue + '%' : 'Rs. ' + discountValue }})</span>
+                    <span class="discount-amount">- Rs. {{ getDiscountAmount() | number:'1.2-2' }}</span>
+                </div>
+            </div>
+
+            <div class="pricing-grand-total">
+                <span>Estimated Total</span>
+                <span>Rs. {{ getGrandTotal() | number:'1.2-2' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- CARD 4b: Simple Pricing (no cost config) -->
+    <div class="section-card mb-4" *ngIf="!hasCosts()">
+        <div class="section-header mb-0">
+            <div class="section-number">{{ bookingMode === 'all' ? '4' : '3' }}</div>
+            <div>
+                <h3 class="section-title">Pricing</h3>
+                <p class="section-subtitle">No cost breakdown configured — enter amount manually</p>
+            </div>
+        </div>
+        <div class="form-row mt-4">
+            <div class="form-field">
+                <label class="field-label">Per Person Amount (Rs.)</label>
+                <p-inputnumber [(ngModel)]="perPersonAmount" [min]="0" [showButtons]="false"
+                               placeholder="0" mode="decimal" [useGrouping]="true"
+                               styleClass="w-full"></p-inputnumber>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Discount</label>
+                <div class="flex gap-2 items-center">
+                    <select [(ngModel)]="discountType" class="discount-select" style="height:2.5rem">
+                        <option value="percent">Percent (%)</option>
+                        <option value="flat">Flat (Rs.)</option>
+                    </select>
+                    <p-inputnumber [(ngModel)]="discountValue" [min]="0" [showButtons]="false"
+                                   placeholder="0" mode="decimal" styleClass="flex-1"></p-inputnumber>
+                </div>
+            </div>
+        </div>
+        <div class="simple-pricing-summary" *ngIf="perPersonAmount > 0">
+            <div class="sps-row"><span>Travellers</span><span>× {{ getTotalTravellers() }}</span></div>
+            <div class="sps-row"><span>Per Person</span><span>Rs. {{ perPersonAmount | number:'1.2-2' }}</span></div>
+            <div class="sps-row" *ngIf="discountValue > 0">
+                <span>Discount</span><span class="discount-amount">- Rs. {{ getSimpleDiscountAmount() | number:'1.2-2' }}</span>
+            </div>
+            <div class="sps-row sps-total"><span>Total</span><span>Rs. {{ getSimpleTotal() | number:'1.2-2' }}</span></div>
+        </div>
+    </div>
+
+    <div class="action-bar">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="goBack()"></button>
+        <button pButton label="Continue Booking" icon="pi pi-arrow-right" iconPos="right" class="p-button-success p-button-lg"
+                [loading]="submitting"
+                [disabled]="!isFormValid()"
+                (click)="continueBooking()">
+        </button>
+    </div>
+</div>
+
+<!-- Not Found -->
+<div *ngIf="!loading && !itinerary" class="not-found-card">
+    <i class="pi pi-exclamation-triangle text-5xl text-yellow-500 mb-3"></i>
+    <h3 class="mb-2">Itinerary not found</h3>
+    <p class="text-600 mb-4">The itinerary you're looking for doesn't exist or has been removed.</p>
+    <button pButton label="Back to List" icon="pi pi-arrow-left" class="p-button-outlined" (click)="goBack()"></button>
+</div>
+
+<!-- Payment Dialog -->
+<app-payment-dialog
+    [(visible)]="showPaymentDialog"
+    [bookingId]="createdBookingId"
+    [bookingReference]="createdBookingRef"
+    [totalAmount]="hasCosts() ? getSubtotal() : getSimpleTotal()"
+    [discountAmount]="hasCosts() ? getDiscountAmount() : getSimpleDiscountAmount()"
+    (paymentComplete)="onPaymentComplete()"
+></app-payment-dialog>

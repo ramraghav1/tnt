@@ -1,0 +1,116 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <span class="font-semibold text-xl">FX Rate Setups</span>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New FX Rate" icon="pi pi-plus" severity="success" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="setups"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [showGridlines]="true"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['sendingCountryName', 'receivingCountryName', 'paymentTypeName', 'agentName', 'sendingCurrency', 'receivingCurrency', 'settlementCurrency']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="sendingCountryName">Corridor <p-sortIcon field="sendingCountryName"></p-sortIcon></th>
+                <th pSortableColumn="paymentTypeName">Payment Type <p-sortIcon field="paymentTypeName"></p-sortIcon></th>
+                <th pSortableColumn="agentName">Agent <p-sortIcon field="agentName"></p-sortIcon></th>
+                <th>Currencies</th>
+                <th pSortableColumn="customerRate" class="text-right">Customer Rate <p-sortIcon field="customerRate"></p-sortIcon></th>
+                <th pSortableColumn="settlementRate" class="text-right">Settlement Rate <p-sortIcon field="settlementRate"></p-sortIcon></th>
+                <th pSortableColumn="crossRate" class="text-right">Cross Rate <p-sortIcon field="crossRate"></p-sortIcon></th>
+                <th>Margin</th>
+                <th>Status</th>
+                <th style="min-width: 8rem">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-setup>
+            <tr>
+                <!-- Corridor -->
+                <td>
+                    <div class="flex items-center gap-1">
+                        <span class="font-semibold">{{ setup.sendingCountryName }}</span>
+                        <i class="pi pi-arrow-right text-color-secondary text-xs"></i>
+                        <span class="font-semibold">{{ setup.receivingCountryName }}</span>
+                    </div>
+                </td>
+                <!-- Payment Type -->
+                <td>{{ setup.paymentTypeName }}</td>
+                <!-- Agent -->
+                <td class="text-color-secondary">{{ setup.agentName || 'Default (All)' }}</td>
+                <!-- Currencies -->
+                <td>
+                    <div class="flex flex-col gap-1">
+                        <div class="flex items-center gap-1">
+                            <p-tag [value]="setup.sendingCurrency" severity="info" [style]="{'font-size':'0.7rem'}"></p-tag>
+                            <i class="pi pi-arrow-right text-color-secondary text-xs"></i>
+                            <p-tag [value]="setup.receivingCurrency" severity="success" [style]="{'font-size':'0.7rem'}"></p-tag>
+                        </div>
+                        <div *ngIf="setup.settlementCurrency" class="flex items-center gap-1">
+                            <span class="text-xs text-color-secondary">Settle:</span>
+                            <p-tag [value]="setup.settlementCurrency" severity="warn" [style]="{'font-size':'0.65rem'}"></p-tag>
+                        </div>
+                    </div>
+                </td>
+                <!-- Customer Rate -->
+                <td class="text-right font-mono font-semibold">{{ formatRate(setup.customerRate) }}</td>
+                <!-- Settlement Rate -->
+                <td class="text-right font-mono">{{ formatRate(setup.settlementRate) }}</td>
+                <!-- Cross Rate -->
+                <td class="text-right font-mono">{{ formatRate(setup.crossRate) }}</td>
+                <!-- Margin -->
+                <td>
+                    <span *ngIf="setup.marginType && setup.marginValue">
+                        {{ setup.marginValue }}{{ setup.marginType === 'Percentage' ? '%' : ' ' + (setup.sendingCurrency || '') }}
+                    </span>
+                    <span *ngIf="!setup.marginType || !setup.marginValue" class="text-color-secondary">—</span>
+                </td>
+                <!-- Status -->
+                <td>
+                    <p-tag [value]="setup.isActive ? 'Active' : 'Inactive'" [severity]="setup.isActive ? 'success' : 'danger'"></p-tag>
+                </td>
+                <!-- Actions -->
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-success p-button-sm" (click)="editSetup(setup)" pTooltip="Edit"></button>
+                        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="deleteSetup(setup)" pTooltip="Delete"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="10" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-chart-line text-4xl"></i>
+                        <span>No FX rate setups found. Click "New FX Rate" to create one.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

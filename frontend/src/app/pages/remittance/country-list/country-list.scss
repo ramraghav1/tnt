@@ -1,0 +1,22 @@
+:host {
+    display: block;
+}
+
+.status-badge {
+    border-radius: 2px;
+    padding: 0.25em 0.5rem;
+    text-transform: uppercase;
+    font-weight: 700;
+    font-size: 12px;
+    letter-spacing: 0.3px;
+}
+
+:host ::ng-deep {
+    .p-tag {
+        font-size: 0.75rem;
+    }
+
+    .p-dialog .p-dialog-content {
+        padding-bottom: 0;
+    }
+}

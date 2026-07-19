@@ -1,0 +1,92 @@
+<p-toast></p-toast>
+
+<p-fluid>
+  <div class="flex flex-col gap-8">
+    <div class="card flex flex-col gap-6">
+      <!-- Title -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (click)="cancel()" [pTooltip]="'common.back' | translate" tooltipPosition="bottom"></button>
+        <h2 class="text-2xl font-bold">{{ (isEditMode ? 'inventory.editGuide' : 'inventory.addGuide') | translate }}</h2>
+      </div>
+
+      <!-- Page loading spinner -->
+      <div *ngIf="pageLoading" class="flex justify-center items-center py-16">
+        <p-progressSpinner strokeWidth="4" animationDuration=".8s" />
+      </div>
+
+      <form *ngIf="!pageLoading" (ngSubmit)="onSubmit()" #guideForm="ngForm">
+        <!-- Basic Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.basicInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.fullName' | translate }} *</label>
+              <input pInputText [(ngModel)]="guide.fullName" name="fullName" required placeholder="Guide full name" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.phoneNumber' | translate }}</label>
+              <input pInputText [(ngModel)]="guide.contactNumber" name="contactNumber" placeholder="Contact number" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.email' | translate }}</label>
+              <input pInputText [(ngModel)]="guide.emailAddress" name="emailAddress" type="email" placeholder="Email address" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.experienceYears' | translate }}</label>
+              <p-inputNumber [(ngModel)]="guide.experienceYears" name="experienceYears" [min]="0" [showButtons]="true" suffix=" years" class="w-full"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.specialization' | translate }}</label>
+              <input pInputText [(ngModel)]="guide.specialization" name="specialization" placeholder="e.g., Mountain Trekking, Cultural Tours" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.pricePerDay' | translate }} (USD) *</label>
+              <p-inputNumber [(ngModel)]="guide.pricePerDay" name="pricePerDay" mode="currency" currency="USD" [min]="0" class="w-full"></p-inputNumber>
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.languages' | translate }}</label>
+              <input pInputText [(ngModel)]="languagesText" name="languages" [placeholder]="'inventory.enterLanguagesCommaSeparated' | translate" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.rating' | translate }}</label>
+              <p-inputNumber [(ngModel)]="guide.rating" name="rating" [min]="0" [max]="5" [minFractionDigits]="1" [maxFractionDigits]="1" [showButtons]="true" [step]="0.5" class="w-full"></p-inputNumber>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.certifications' | translate }}</label>
+            <input pInputText [(ngModel)]="guide.certifications" name="certifications" placeholder="e.g., First Aid Certified, Mountain Guide License" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.bio' | translate }}</label>
+            <textarea pInputTextarea [(ngModel)]="guide.bio" name="bio" rows="4" placeholder="Guide's biography and experience" class="w-full"></textarea>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full">
+            <label>{{ 'inventory.photo' | translate }} URL</label>
+            <input pInputText [(ngModel)]="guide.photo" name="photo" placeholder="https://..." class="w-full" />
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-2 mt-6">
+          <button pButton type="button" [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+          <button pButton type="submit" [label]="'common.save' | translate" [loading]="loading" icon="pi pi-check"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</p-fluid>

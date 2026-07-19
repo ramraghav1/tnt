@@ -1,0 +1,421 @@
+<p-toast></p-toast>
+
+<p-fluid>
+    <div class="flex flex-col gap-8">
+        
+        <!-- Page Header -->
+        <div class="card">
+            <div class="flex items-center gap-4 mb-4">
+                <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center">
+                    <i class="pi pi-building text-white text-xl"></i>
+                </div>
+                <div>
+                    <h2 class="text-2xl font-bold m-0 text-surface-900 dark:text-surface-0">Create New Tenant</h2>
+                    <p class="text-surface-600 dark:text-surface-400 m-0 mt-1">Set up a new tenant with custom branding, database configuration, and manager account</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Main Form with Tabs -->
+        <div class="card">
+            <p-tabs>
+                <!-- Tab 1: Basic Information -->
+                <p-tabpanel header="Basic Information">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="tenantName">Tenant Name *</label>
+                                <input pInputText id="tenantName" [(ngModel)]="tenantName" 
+                                    placeholder="e.g., Himalayan Adventures Pvt. Ltd." class="w-full" required />
+                                <small class="text-600">The legal or business name of the tenant</small>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="subdomain">Subdomain *</label>
+                                <input pInputText id="subdomain" [(ngModel)]="subdomain" 
+                                    (blur)="checkSubdomainAvailability()"
+                                    placeholder="e.g., himalayan-adventures" class="w-full" required />
+                                <small class="text-600">Used for tenant URL: subdomain.yourapp.com</small>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contactEmail">Contact Email *</label>
+                                <input pInputText id="contactEmail" [(ngModel)]="contactEmail" type="email"
+                                    placeholder="contact@company.com" class="w-full" required />
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contactPhone">Contact Phone</label>
+                                <input pInputText id="contactPhone" [(ngModel)]="contactPhone" 
+                                    placeholder="+977 98XXXXXXXX" class="w-full" />
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                            <label for="products">Products/Modules *</label>
+                            <p-multiselect 
+                                [(ngModel)]="selectedProducts" 
+                                [options]="availableProducts" 
+                                optionLabel="name"
+                                optionValue="value"
+                                placeholder="Select products"
+                                class="w-full"
+                                [showClear]="true">
+                            </p-multiselect>
+                            <small class="text-600">Choose which modules this tenant can access</small>
+                        </div>
+                    </div>
+                </p-tabpanel>
+
+                <!-- Tab 2: Manager Account -->
+                <p-tabpanel header="Manager Account">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900 dark:bg-opacity-20 rounded-lg border-l-4 border-blue-500">
+                            <i class="pi pi-info-circle text-blue-500 text-xl"></i>
+                            <div class="flex-1">
+                                <div class="font-semibold text-blue-900 dark:text-blue-100 mb-1">Manager Account Setup</div>
+                                <div class="text-sm text-blue-700 dark:text-blue-200">Create the primary manager login for this tenant. This account will have full administrative access.</div>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="managerFullName">Full Name *</label>
+                                <input pInputText id="managerFullName" [(ngModel)]="managerFullName" 
+                                    placeholder="Manager full name" class="w-full" required />
+                                <small class="text-600">Manager's complete name</small>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="managerEmail">Email (Login Username) *</label>
+                                <input pInputText id="managerEmail" [(ngModel)]="managerEmail" type="email"
+                                    placeholder="manager@company.com" class="w-full" required />
+                                <small class="text-600">Will be used for login authentication</small>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="managerPassword">Password *</label>
+                                <p-password id="managerPassword" [(ngModel)]="managerPassword" 
+                                    placeholder="Min 6 characters" [toggleMask]="true" [feedback]="true" 
+                                    [fluid]="true" required />
+                                <small class="text-600">Minimum 6 characters required</small>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="managerPhone">Phone Number</label>
+                                <input pInputText id="managerPhone" [(ngModel)]="managerPhone" 
+                                    placeholder="+977 98XXXXXXXX" class="w-full" />
+                                <small class="text-600">Contact phone number</small>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                            <label for="managerAddress">Address</label>
+                            <input pInputText id="managerAddress" [(ngModel)]="managerAddress" 
+                                placeholder="Manager address" class="w-full" />
+                            <small class="text-600">Optional physical address</small>
+                        </div>
+                    </div>
+                </p-tabpanel>
+
+                <!-- Tab 3: Branding & Theme -->
+                <p-tabpanel header="Branding & Theme">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="font-medium text-lg">Theme Colors</div>
+                        
+                        <div class="grid">
+                            <div class="col-12 md:col-4">
+                                <div class="flex flex-col gap-2">
+                                    <label>Primary Color</label>
+                                    <div class="flex align-items-center gap-3">
+                                        <p-colorpicker [(ngModel)]="primaryColor" format="hex"></p-colorpicker>
+                                        <input pInputText [(ngModel)]="primaryColor" class="flex-1" placeholder="#3B82F6" />
+                                        <div class="border-circle" 
+                                             [style.background-color]="primaryColor" 
+                                             style="width: 40px; height: 40px; border: 2px solid #e5e7eb;"></div>
+                                    </div>
+                                    <small class="text-600">Main brand color</small>
+                                </div>
+                            </div>
+
+                            <div class="col-12 md:col-4">
+                                <div class="flex flex-col gap-2">
+                                    <label>Secondary Color</label>
+                                    <div class="flex align-items-center gap-3">
+                                        <p-colorpicker [(ngModel)]="secondaryColor" format="hex"></p-colorpicker>
+                                        <input pInputText [(ngModel)]="secondaryColor" class="flex-1" placeholder="#10B981" />
+                                        <div class="border-circle" 
+                                             [style.background-color]="secondaryColor" 
+                                             style="width: 40px; height: 40px; border: 2px solid #e5e7eb;"></div>
+                                    </div>
+                                    <small class="text-600">Secondary brand color</small>
+                                </div>
+                            </div>
+
+                            <div class="col-12 md:col-4">
+                                <div class="flex flex-col gap-2">
+                                    <label>Accent Color</label>
+                                    <div class="flex align-items-center gap-3">
+                                        <p-colorpicker [(ngModel)]="accentColor" format="hex"></p-colorpicker>
+                                        <input pInputText [(ngModel)]="accentColor" class="flex-1" placeholder="#F59E0B" />
+                                        <div class="border-circle" 
+                                             [style.background-color]="accentColor" 
+                                             style="width: 40px; height: 40px; border: 2px solid #e5e7eb;"></div>
+                                    </div>
+                                    <small class="text-600">Accent/highlight color</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button pButton label="Preview Theme" icon="pi pi-eye" (click)="previewTheme()" [outlined]="true"></button>
+                            <button pButton label="Reset to Default" icon="pi pi-refresh" (click)="resetTheme()" severity="secondary" [outlined]="true"></button>
+                        </div>
+
+                        <div class="font-medium text-lg mt-4">Logo & Assets</div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="logoUrl">Logo URL</label>
+                                <input pInputText id="logoUrl" [(ngModel)]="logoUrl" 
+                                    placeholder="https://example.com/logo.png" class="w-full" />
+                                <small class="text-600">Link to the tenant's logo image</small>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="faviconUrl">Favicon URL</label>
+                                <input pInputText id="faviconUrl" [(ngModel)]="faviconUrl" 
+                                    placeholder="https://example.com/favicon.ico" class="w-full" />
+                                <small class="text-600">Link to the tenant's favicon</small>
+                            </div>
+                        </div>
+                    </div>
+                </p-tabpanel>
+
+                <!-- Tab 4: Configuration -->
+                <p-tabpanel header="Configuration">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="font-medium text-lg">Usage Limits</div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="maxUsers">Maximum Users</label>
+                                <p-inputNumber 
+                                    id="maxUsers" 
+                                    [(ngModel)]="maxUsers" 
+                                    [min]="1" 
+                                    [max]="1000"
+                                    [showButtons]="true"
+                                    class="w-full">
+                                </p-inputNumber>
+                                <small class="text-600">Maximum concurrent users allowed</small>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="maxBookings">Max Bookings/Month</label>
+                                <p-inputNumber 
+                                    id="maxBookings" 
+                                    [(ngModel)]="maxBookingsPerMonth" 
+                                    [min]="1" 
+                                    [max]="10000"
+                                    [showButtons]="true"
+                                    class="w-full">
+                                </p-inputNumber>
+                                <small class="text-600">Maximum bookings allowed per month</small>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="timezone">Timezone</label>
+                                <p-select 
+                                    id="timezone" 
+                                    [(ngModel)]="timeZone" 
+                                    [options]="timezones" 
+                                    optionLabel="label" 
+                                    optionValue="value"
+                                    class="w-full">
+                                </p-select>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="currency">Currency</label>
+                                <p-select 
+                                    id="currency" 
+                                    [(ngModel)]="currency" 
+                                    [options]="currencies" 
+                                    optionLabel="label" 
+                                    optionValue="value"
+                                    class="w-full">
+                                </p-select>
+                            </div>
+                        </div>
+
+                        <div class="flex align-items-center gap-2">
+                            <p-checkbox [(ngModel)]="isTrialAccount" [binary]="true" inputId="trial"></p-checkbox>
+                            <label for="trial">This is a trial account</label>
+                        </div>
+
+                        <div *ngIf="isTrialAccount" class="flex flex-col gap-2 w-full">
+                            <label for="trialExpires">Trial Expires On</label>
+                            <p-datePicker 
+                                [(ngModel)]="trialExpiresAt" 
+                                [showIcon]="true"
+                                dateFormat="yy-mm-dd"
+                                class="w-full">
+                            </p-datePicker>
+                        </div>
+                    </div>
+                </p-tabpanel>
+
+                <!-- Tab 5: Database Configuration -->
+                <p-tabpanel header="Database">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label for="dbType">Database Type</label>
+                            <p-select 
+                                id="dbType" 
+                                [(ngModel)]="databaseType" 
+                                [options]="databaseTypes" 
+                                optionLabel="label" 
+                                optionValue="value"
+                                class="w-full">
+                            </p-select>
+                            <small class="text-600">
+                                <strong>Shared:</strong> Uses the main application database<br>
+                                <strong>Dedicated:</strong> Uses a separate database (provide connection details below)
+                            </small>
+                        </div>
+
+                        <div *ngIf="databaseType === 'Dedicated'" class="flex flex-col gap-6 surface-100 border-round-lg p-4">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="dbName">Database Name</label>
+                                <input pInputText id="dbName" [(ngModel)]="databaseName" 
+                                    placeholder="tenant_database_name" class="w-full" />
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="dbConnection">Connection String</label>
+                                <textarea pInputTextarea id="dbConnection" [(ngModel)]="databaseConnectionString" 
+                                    rows="3" class="w-full"
+                                    placeholder="Host=localhost;Port=5432;Database=tenant_db;Username=user;Password=***"></textarea>
+                                <small class="text-600">PostgreSQL connection string for the dedicated database</small>
+                            </div>
+
+                            <div class="surface-card border-round-lg p-3">
+                                <div class="flex align-items-center gap-2 text-orange-500">
+                                    <i class="pi pi-exclamation-triangle"></i>
+                                    <strong>Security Notice:</strong>
+                                </div>
+                                <p class="text-sm text-600 mt-2 mb-0">
+                                    Connection strings are encrypted when stored. Ensure the database exists and credentials are correct before saving.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                </p-tabpanel>
+
+                <!-- Tab 6: Contract & Billing -->
+                <p-tabpanel header="Contract & Billing">
+                    <div class="flex flex-col gap-6 mt-4">
+                        <div class="font-medium text-lg">Contract Information</div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contractStart">Contract Start Date</label>
+                                <p-datePicker 
+                                    [(ngModel)]="contractStartDate" 
+                                    [showIcon]="true"
+                                    dateFormat="yy-mm-dd"
+                                    class="w-full">
+                                </p-datePicker>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contractEnd">Contract End Date</label>
+                                <p-datePicker 
+                                    [(ngModel)]="contractEndDate" 
+                                    [showIcon]="true"
+                                    dateFormat="yy-mm-dd"
+                                    class="w-full">
+                                </p-datePicker>
+                            </div>
+                        </div>
+
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contractType">Contract Type</label>
+                                <p-select 
+                                    id="contractType" 
+                                    [(ngModel)]="contractType" 
+                                    [options]="contractTypes" 
+                                    optionLabel="label" 
+                                    optionValue="value"
+                                    class="w-full">
+                                </p-select>
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="monthlyFee">Monthly Fee ({{currency}})</label>
+                                <p-inputNumber 
+                                    id="monthlyFee" 
+                                    [(ngModel)]="monthlyFee" 
+                                    mode="currency"
+                                    [currency]="currency"
+                                    [min]="0"
+                                    class="w-full">
+                                </p-inputNumber>
+                            </div>
+                        </div>
+
+                        <div class="font-medium text-lg mt-4">Billing Information</div>
+                        
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="billingEmail">Billing Email</label>
+                                <input pInputText id="billingEmail" [(ngModel)]="billingEmail" type="email"
+                                    placeholder="billing@company.com" class="w-full" />
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="paymentStatus">Payment Status</label>
+                                <p-select 
+                                    id="paymentStatus" 
+                                    [(ngModel)]="paymentStatus" 
+                                    [options]="paymentStatuses" 
+                                    optionLabel="label" 
+                                    optionValue="value"
+                                    class="w-full">
+                                </p-select>
+                            </div>
+                        </div>
+                    </div>
+                </p-tabpanel>
+            </p-tabs>
+        </div>
+
+        <!-- Action Buttons -->
+        <div class="card">
+            <div class="flex gap-3 justify-content-end">
+                <button pButton 
+                    label="Cancel" 
+                    icon="pi pi-times"
+                    severity="secondary" 
+                    [outlined]="true"
+                    (click)="cancel()">
+                </button>
+                <button pButton 
+                    label="Create Tenant" 
+                    icon="pi pi-check"
+                    [loading]="saving"
+                    (click)="createTenant()">
+                </button>
+            </div>
+        </div>
+
+    </div>
+</p-fluid>

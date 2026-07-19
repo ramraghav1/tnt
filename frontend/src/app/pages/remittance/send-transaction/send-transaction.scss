@@ -1,0 +1,198 @@
+/* ===========================
+   Send Transaction Styles
+   =========================== */
+
+/* Receipt Container */
+.receipt-container {
+    padding: 1.5rem;
+    background: #fff;
+}
+
+.receipt-copy {
+    position: relative;
+    padding: 1.5rem;
+    overflow: hidden;
+}
+
+.receipt-customer {
+    position: relative;
+}
+
+.receipt-watermark {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%) rotate(-25deg);
+    font-size: 4rem;
+    font-weight: 800;
+    color: rgba(34, 197, 94, 0.08);
+    white-space: nowrap;
+    pointer-events: none;
+    z-index: 0;
+    letter-spacing: 0.3rem;
+}
+
+.receipt-header {
+    text-align: center;
+    margin-bottom: 1rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-logo {
+    margin-bottom: 0.5rem;
+}
+
+.receipt-title {
+    font-size: 1.5rem;
+    font-weight: 700;
+    margin: 0;
+    color: var(--text-color);
+}
+
+.receipt-subtitle {
+    font-size: 0.875rem;
+    color: var(--text-color-secondary);
+    margin: 0.25rem 0 0;
+}
+
+.receipt-ref {
+    display: flex;
+    justify-content: space-between;
+    padding: 0.75rem 1rem;
+    background: var(--surface-100);
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    font-size: 0.875rem;
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-body {
+    position: relative;
+    z-index: 1;
+}
+
+.receipt-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 1rem;
+
+    td {
+        padding: 0.5rem 0.75rem;
+        border-bottom: 1px solid var(--surface-200);
+        font-size: 0.875rem;
+    }
+
+    .receipt-label {
+        color: var(--text-color-secondary);
+        width: 40%;
+        font-weight: 500;
+    }
+
+    .receipt-total {
+        td {
+            border-top: 2px solid var(--primary-color);
+            border-bottom: 2px solid var(--primary-color);
+            background: var(--primary-50, rgba(59, 130, 246, 0.05));
+        }
+    }
+}
+
+.receipt-parties {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1rem;
+    margin-top: 1rem;
+}
+
+.receipt-party {
+    padding: 0.75rem;
+    background: var(--surface-50);
+    border-radius: 0.5rem;
+    font-size: 0.875rem;
+    line-height: 1.6;
+}
+
+.receipt-party-header {
+    font-weight: 700;
+    margin-bottom: 0.25rem;
+    color: var(--text-color);
+    border-bottom: 1px solid var(--surface-200);
+    padding-bottom: 0.25rem;
+}
+
+.receipt-separator {
+    text-align: center;
+    padding: 0.75rem 0;
+    border-top: 2px dashed var(--surface-300);
+    border-bottom: 2px dashed var(--surface-300);
+    color: var(--text-color-secondary);
+    font-size: 0.75rem;
+    margin: 0.5rem 0;
+    letter-spacing: 0.1rem;
+}
+
+/* Print Styles */
+@media print {
+    /* Hide everything except the receipt */
+    body * {
+        visibility: hidden !important;
+    }
+
+    #print-receipt,
+    #print-receipt * {
+        visibility: visible !important;
+    }
+
+    #print-receipt {
+        position: absolute !important;
+        left: 0 !important;
+        top: 0 !important;
+        width: 100% !important;
+        padding: 0 !important;
+        margin: 0 !important;
+    }
+
+    .print-hide,
+    .p-dialog-header,
+    .p-dialog-footer {
+        display: none !important;
+    }
+
+    .receipt-container {
+        padding: 0 !important;
+    }
+
+    .receipt-copy {
+        page-break-inside: avoid;
+    }
+
+    .receipt-watermark {
+        color: rgba(34, 197, 94, 0.12) !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .receipt-separator {
+        margin: 1rem 0;
+    }
+
+    .receipt-ref {
+        background: #f3f4f6 !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .receipt-table .receipt-total td {
+        background: #eff6ff !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+
+    .receipt-party {
+        background: #f9fafb !important;
+        -webkit-print-color-adjust: exact;
+        print-color-adjust: exact;
+    }
+}

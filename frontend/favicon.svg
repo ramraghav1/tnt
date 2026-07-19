@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg width="58px" height="55px" viewBox="0 0 58 55" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
+    <!-- Generator: Sketch 43.2 (39069) - http://www.bohemiancoding.com/sketch -->
+    <title>Tent</title>
+    <desc>Created with Sketch.</desc>
+    <defs></defs>
+    <g id="Page-1" stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+        <g id="Artboard" transform="translate(-124.000000, -29.000000)">
+            <g id="Tent" transform="translate(125.000000, 29.000000)">
+                <path d="M18.0615422,35 L5.00017361,35 C2.79093873,35 1,36.7964986 1,39.0049072 L1,38.9121313 C1,41.1239804 2.78840417,42.9170384 4.99341437,42.9170384 L25.9452493,42.9170384 C28.1507512,42.9170384 29.9386637,44.7157481 29.9386637,46.9223309 L29.9386637,48.9727714 C29.9386637,51.1848334 31.7295007,52.9780639 33.9394814,52.9780639 L54.8399206,52.9780639" id="Path-11" stroke="#5EA7FF" stroke-width="4" stroke-linecap="round"></path>
+                <path d="M48,44 L48,51" id="Line" stroke="#BD7575" stroke-width="2" stroke-linecap="square"></path>
+                <circle id="Oval-10" fill="#ED9111" cx="39" cy="12" r="12"></circle>
+                <path d="M48,45 C51.8659932,45 55,43.4391895 55,34.34375 C55,25.2483105 51.8659932,14 48,14 C44.1340068,14 41,25.2483105 41,34.34375 C41,43.4391895 44.1340068,45 48,45 Z" id="Oval-3" fill="#22BA8E"></path>
+                <polygon id="Rectangle-16" fill="#979797" points="5 15 34 15 29 31 0 31"></polygon>
+                <polyline id="Rectangle-16" fill="#595959" points="34 15 5 15 10 31 39 31"></polyline>
+            </g>
+        </g>
+    </g>
+</svg>

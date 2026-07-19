@@ -1,0 +1,23 @@
+:host ::ng-deep {
+    .p-inputnumber {
+        width: 100%;
+        
+        input {
+            width: 100%;
+        }
+    }
+
+    .p-select, .p-multiselect, .p-calendar {
+        width: 100%;
+    }
+
+    .p-colorpicker-panel {
+        z-index: 1100;
+    }
+
+    .p-tabs {
+        .p-tab {
+            min-width: 140px;
+        }
+    }
+}

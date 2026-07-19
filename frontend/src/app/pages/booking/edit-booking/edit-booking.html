@@ -1,0 +1,273 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<!-- Loading -->
+<div *ngIf="loading" class="flex justify-center items-center" style="min-height: 60vh">
+    <p-progressSpinner strokeWidth="4" animationDuration=".8s"></p-progressSpinner>
+</div>
+
+<!-- Main Content -->
+<div *ngIf="!loading && booking" class="edit-booking-page">
+
+    <!-- ═══ HEADER ═══ -->
+    <div class="section-card mb-4">
+        <div class="flex items-center gap-3 mb-3 flex-wrap">
+            <button pButton icon="pi pi-arrow-left" severity="secondary" [outlined]="true" size="small"
+                    pTooltip="Back to Manage Bookings" (click)="goBack()"></button>
+            <div class="flex-1 min-w-0">
+                <h2 class="text-xl font-bold m-0">Edit Booking</h2>
+                <p class="text-color-secondary text-sm m-0 mt-1">
+                    {{ booking.templateTitle }}
+                    <span *ngIf="booking.bookingReference" class="ml-2 font-mono font-semibold" style="color: var(--primary-color);">
+                        {{ booking.bookingReference }}
+                    </span>
+                </p>
+            </div>
+            <div class="flex gap-2 shrink-0">
+                <p-tag [value]="booking.status" [severity]="statusSeverity(booking.status)"></p-tag>
+                <p-tag [value]="booking.paymentStatus" [severity]="paymentSeverity(booking.paymentStatus)"></p-tag>
+            </div>
+        </div>
+
+        <!-- Quick info bar -->
+        <div class="info-bar">
+            <div class="info-item">
+                <i class="pi pi-users"></i>
+                <span>{{ getTotalTravellers() }} person(s)</span>
+            </div>
+            <div class="info-item">
+                <i class="pi pi-calendar"></i>
+                <span>{{ editableDays.length }} day(s)</span>
+            </div>
+            <div class="info-item">
+                <i class="pi pi-indian-rupee"></i>
+                <span>NPR {{ booking.totalAmount | number:'1.0-0' }}</span>
+            </div>
+            <div class="info-item" *ngIf="booking.amountPaid > 0">
+                <i class="pi pi-check-circle" style="color: var(--green-500, #22c55e);"></i>
+                <span>Paid: NPR {{ booking.amountPaid | number:'1.0-0' }}</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION 1: DATES & OVERVIEW ═══ -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <div class="section-number">1</div>
+            <div>
+                <h3 class="section-title">Booking Dates & Details</h3>
+                <p class="section-subtitle">Update travel dates and special requests</p>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field">
+                <label class="field-label">Start Date *</label>
+                <p-datePicker [(ngModel)]="startDate" [showIcon]="true" dateFormat="yy-mm-dd"
+                              (ngModelChange)="onStartDateChange()" styleClass="w-full"></p-datePicker>
+            </div>
+            <div class="form-field">
+                <label class="field-label">End Date *</label>
+                <p-datePicker [(ngModel)]="endDate" [showIcon]="true" dateFormat="yy-mm-dd"
+                              [minDate]="minEndDate" styleClass="w-full"></p-datePicker>
+            </div>
+            <div class="form-field">
+                <label class="field-label">Total Amount (NPR)</label>
+                <p-inputNumber [(ngModel)]="totalAmount" [min]="0" prefix="NPR " styleClass="w-full"></p-inputNumber>
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="form-field-full">
+                <label class="field-label">Special Requests</label>
+                <textarea pTextarea [(ngModel)]="specialRequests" rows="3" class="w-full"
+                          placeholder="Any special requirements..."></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION 2: DAILY PLAN ═══ -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <div class="section-number">2</div>
+            <div>
+                <h3 class="section-title">Daily Plan</h3>
+                <p class="section-subtitle">Edit each day's details — only this booking is affected</p>
+            </div>
+            <div class="toggle-btns ml-auto">
+                <button pButton label="Expand All" icon="pi pi-angle-double-down" class="p-button-text p-button-sm" (click)="expandAllDays()"></button>
+                <button pButton label="Collapse All" icon="pi pi-angle-double-up" class="p-button-text p-button-sm" (click)="collapseAllDays()"></button>
+            </div>
+        </div>
+
+        <div class="day-list">
+            <div *ngFor="let day of editableDays; let i = index" class="day-card">
+                <!-- Day Header -->
+                <div class="day-card-header" (click)="toggleDay(i)">
+                    <div class="flex items-center gap-3">
+                        <span class="day-number-badge">{{ day.dayNumber }}</span>
+                        <div>
+                            <span class="day-card-title">Day {{ day.dayNumber }}{{ day.title ? ': ' + day.title : '' }}</span>
+                            <span *ngIf="day.location" class="day-card-location">
+                                <i class="pi pi-map-marker"></i> {{ day.location }}
+                            </span>
+                        </div>
+                    </div>
+                    <i class="pi day-chevron" [class.pi-chevron-down]="collapsedDayMap[i]" [class.pi-chevron-up]="!collapsedDayMap[i]"></i>
+                </div>
+
+                <!-- Day Content -->
+                <div *ngIf="!collapsedDayMap[i]" class="day-card-content">
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label class="field-label">Title</label>
+                            <input pInputText [(ngModel)]="day.title" placeholder="Day title" />
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">Location</label>
+                            <input pInputText [(ngModel)]="day.location" placeholder="Location" />
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-field">
+                            <label class="field-label">Accommodation</label>
+                            <input pInputText [(ngModel)]="day.accommodation" placeholder="Hotel/Resort name" />
+                        </div>
+                        <div class="form-field">
+                            <label class="field-label">Transport</label>
+                            <input pInputText [(ngModel)]="day.transport" placeholder="Transport mode" />
+                        </div>
+                    </div>
+
+                    <!-- Meals -->
+                    <div class="form-row">
+                        <div class="form-field-full">
+                            <label class="field-label">Meals Included</label>
+                            <div class="meals-row">
+                                <div class="meal-item"><p-checkbox [(ngModel)]="day.breakfastIncluded" [binary]="true"></p-checkbox><span>Breakfast</span></div>
+                                <div class="meal-item"><p-checkbox [(ngModel)]="day.lunchIncluded" [binary]="true"></p-checkbox><span>Lunch</span></div>
+                                <div class="meal-item"><p-checkbox [(ngModel)]="day.dinnerIncluded" [binary]="true"></p-checkbox><span>Dinner</span></div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Activities -->
+                    <div class="form-row">
+                        <div class="form-field-full">
+                            <label class="field-label">Activities</label>
+                            <div class="flex flex-wrap gap-2 mb-2">
+                                <p-chip *ngFor="let act of day.activities; let ai = index"
+                                        [label]="act" [removable]="true" (onRemove)="removeActivity(day, ai)"></p-chip>
+                                <span *ngIf="day.activities.length === 0" class="text-color-secondary text-sm">No activities</span>
+                            </div>
+                            <div class="flex gap-2">
+                                <input pInputText [(ngModel)]="day.newActivity" placeholder="Add activity..."
+                                       (keyup.enter)="addActivity(day)" class="flex-1" />
+                                <button pButton icon="pi pi-plus" (click)="addActivity(day)" severity="info" [outlined]="true" size="small"></button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ SECTION 3: TRAVELERS ═══ -->
+    <div class="section-card mb-4">
+        <div class="section-header">
+            <div class="section-number">3</div>
+            <div>
+                <h3 class="section-title">Travelers</h3>
+                <p class="section-subtitle">Edit traveler details — {{ travelers.length }} traveler(s), {{ getTotalTravellers() }} person(s)</p>
+            </div>
+            <div class="toggle-btns ml-auto">
+                <button pButton label="Expand All" icon="pi pi-angle-double-down" class="p-button-text p-button-sm" (click)="expandAllTravelers()"></button>
+                <button pButton label="Collapse All" icon="pi pi-angle-double-up" class="p-button-text p-button-sm" (click)="collapseAllTravelers()"></button>
+                <button pButton label="Add Traveler" icon="pi pi-user-plus" class="p-button-sm" severity="success" [outlined]="true" (click)="addTraveler()"></button>
+            </div>
+        </div>
+
+        <div class="traveler-list">
+            <div *ngFor="let t of travelers; let ti = index" class="traveler-card-compact">
+                <!-- Traveler Header -->
+                <div class="traveler-compact-header" (click)="toggleTraveler(ti)">
+                    <div class="flex items-center gap-2">
+                        <span class="traveler-badge">{{ ti + 1 }}</span>
+                        <span class="font-semibold text-sm">{{ t.fullName || 'Traveler ' + (ti + 1) }}</span>
+                        <p-tag *ngIf="t.isAdult" value="Adult" severity="info" [rounded]="true"></p-tag>
+                        <p-tag *ngIf="t.isChild" value="Child" severity="warn" [rounded]="true"></p-tag>
+                        <p-tag *ngIf="t.isSenior" value="Senior" severity="secondary" [rounded]="true"></p-tag>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button pButton icon="pi pi-trash" severity="danger" [text]="true" size="small"
+                                (click)="removeTraveler(ti); $event.stopPropagation()"
+                                *ngIf="travelers.length > 1"
+                                pTooltip="Remove traveler"></button>
+                        <i class="pi day-chevron" [class.pi-chevron-down]="collapsedTravelerMap[ti]" [class.pi-chevron-up]="!collapsedTravelerMap[ti]"></i>
+                    </div>
+                </div>
+
+                <!-- Traveler Body -->
+                <div *ngIf="!collapsedTravelerMap[ti]" class="traveler-compact-body">
+                    <div class="traveler-inline-row">
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Full Name *</label>
+                            <input pInputText [(ngModel)]="t.fullName" placeholder="Full name" class="compact-input" />
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Contact</label>
+                            <input pInputText [(ngModel)]="t.contactNumber" placeholder="Phone" class="compact-input" />
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Email</label>
+                            <input pInputText [(ngModel)]="t.email" placeholder="Email" class="compact-input" />
+                        </div>
+                        <div class="traveler-field">
+                            <label class="field-label-sm">Nationality</label>
+                            <input pInputText [(ngModel)]="t.nationality" placeholder="Nationality" class="compact-input" />
+                        </div>
+                    </div>
+                    <div class="traveller-type-row">
+                        <span class="field-label-sm">Type:</span>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="t.isAdult" [binary]="true"
+                                        (ngModelChange)="onTravelerTypeChange(t, 'adult', $event)"></p-checkbox>
+                            <span>Adult</span>
+                        </div>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="t.isChild" [binary]="true"
+                                        (ngModelChange)="onTravelerTypeChange(t, 'child', $event)"></p-checkbox>
+                            <span>Child</span>
+                        </div>
+                        <div class="type-check">
+                            <p-checkbox [(ngModel)]="t.isSenior" [binary]="true"
+                                        (ngModelChange)="onTravelerTypeChange(t, 'senior', $event)"></p-checkbox>
+                            <span>Senior</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══ ACTIONS ═══ -->
+    <div class="section-card">
+        <div class="action-bar" style="border-top: none; padding-top: 0;">
+            <button pButton label="Cancel" icon="pi pi-times" severity="secondary" [outlined]="true" (click)="goBack()"></button>
+            <button pButton label="Update Booking" icon="pi pi-save" severity="success"
+                    [loading]="submitting" [disabled]="!isFormValid()"
+                    (click)="confirmUpdate()"></button>
+        </div>
+        <div class="text-color-secondary text-xs mt-3 text-center">
+            <i class="pi pi-info-circle mr-1"></i>
+            Only this booking instance is updated. The original itinerary template and other bookings are not affected.
+        </div>
+    </div>
+</div>
+
+<!-- Not Found -->
+<div *ngIf="!loading && !booking" class="not-found-card">
+    <i class="pi pi-exclamation-circle text-4xl mb-3" style="color: var(--text-color-secondary);"></i>
+    <h3>Booking not found</h3>
+    <button pButton label="Back to Manage Bookings" icon="pi pi-arrow-left" severity="secondary" (click)="goBack()"></button>
+</div>

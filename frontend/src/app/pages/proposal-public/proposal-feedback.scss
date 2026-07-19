@@ -1,0 +1,57 @@
+.feedback-public-page {
+    max-width: 600px;
+    margin: 0 auto;
+    padding: 16px 16px 40px;
+    font-family: 'Inter', 'Segoe UI', Arial, sans-serif;
+}
+
+.feedback-header {
+    margin-bottom: 16px;
+}
+
+.feedback-card {
+    text-align: center;
+    padding: 32px;
+    background: white;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+}
+
+.feedback-icon {
+    margin-bottom: 16px;
+}
+
+.feedback-icon i {
+    font-size: 48px;
+    color: #6366f1;
+}
+
+.feedback-card h2 {
+    margin: 0 0 8px;
+    color: #1e293b;
+}
+
+.feedback-card textarea {
+    text-align: left;
+}
+
+.success-section {
+    text-align: center;
+    padding: 64px 16px;
+}
+
+.success-anim i {
+    font-size: 64px;
+    color: #16a34a;
+    margin-bottom: 16px;
+}
+
+.success-section h2 {
+    color: #1e293b;
+    margin-bottom: 8px;
+}
+
+.success-section p {
+    max-width: 400px;
+    margin: 4px auto;
+}

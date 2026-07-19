@@ -1,0 +1,51 @@
+<div class="card">
+    <div class="font-semibold text-xl mb-4">Organization List</div>
+    <p-table
+        #dt
+        [value]="organizations"
+        [paginator]="true"
+        [rows]="10"
+        [showGridlines]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['userFullName', 'address', 'emailAddress', 'mobileNumber']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-column sm:flex-row">
+                <button pButton label="Clear" class="p-button-outlined mb-2" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search organization..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template pTemplate="header">
+      <tr>
+        <th pSortableColumn="organizationName">Name <p-sortIcon field="organizationName"></p-sortIcon></th>
+        <th pSortableColumn="organizationType">Type <p-sortIcon field="organizationType"></p-sortIcon></th>
+        <th pSortableColumn="countryIso3">Country <p-sortIcon field="countryIso3"></p-sortIcon></th>
+        <th pSortableColumn="status">Status <p-sortIcon field="status"></p-sortIcon></th>
+        <th pSortableColumn="contactPerson">Contact Person <p-sortIcon field="contactPerson"></p-sortIcon></th>
+        <th pSortableColumn="contactEmail">Email <p-sortIcon field="contactEmail"></p-sortIcon></th>
+        <th pSortableColumn="contactPhone">Phone <p-sortIcon field="contactPhone"></p-sortIcon></th>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="body" let-org>
+      <tr>
+        <td>{{ org.organizationName }}</td>
+        <td>{{ org.organizationType }}</td>
+        <td>{{ org.countryIso3 }}</td>
+        <td>{{ org.status }}</td>
+        <td>{{ org.contactPerson }}</td>
+        <td>{{ org.contactEmail }}</td>
+        <td>{{ org.contactPhone }}</td>
+      </tr>
+    </ng-template>
+    <ng-template pTemplate="emptymessage">
+      <tr>
+        <td colspan="7" class="text-center text-gray-500 py-6">No organizations found.</td>
+      </tr>
+    </ng-template>
+  </p-table>
+</div>

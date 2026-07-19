@@ -1,0 +1,494 @@
+using Business.Services;
+using Bussiness.Services;
+using Bussiness.Services.Clinic;
+using Bussiness.Services.Organization;
+using Bussiness.Services.Remittance;
+using Bussiness.Services.TourAndTravels;
+using Bussiness.Services.Transaction;
+using Domain.Models;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using Microsoft.AspNetCore.Diagnostics;
+using Microsoft.AspNetCore.Http.Json;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.IdentityModel.Tokens;
+using Npgsql;
+using Repository.Dapper;
+using Repository.Interfaces;
+using Repository.Interfaces.Clinic;
+using Repository.Interfaces.Remittance;
+using Repository.Interfaces.TourAndTravels;
+using Repository.Repositories;
+using Repository.Repositories.Clinic;
+using Repository.Repositories.Remittance;
+using Repository.Repositories.TourAndTravels;
+using server.MiddleWare;
+using System.Data;
+using Serilog.Context;
+using System.IO.Compression;
+using System.Text;
+using System.Text.Json;
+using System.Text.Json.Serialization;
+using System.Threading.RateLimiting;
+using Microsoft.AspNetCore.ResponseCompression;
+using Microsoft.AspNetCore.RateLimiting;
+using Scalar.AspNetCore;
+using System.Globalization;
+
+using Dapper;
+using Serilog;
+using Serilog.Events;
+
+var builder = WebApplication.CreateBuilder(args);
+
+// ────────────────────────────────────────────
+// Configure Serilog for structured logging
+// ────────────────────────────────────────────
+Log.Logger = new LoggerConfiguration()
+    .MinimumLevel.Information()
+    .MinimumLevel.Override("Microsoft.AspNetCore", LogEventLevel.Warning)
+    .Enrich.FromLogContext()
+    .Enrich.WithProperty("Application", "TNT-API")
+    .WriteTo.Console(outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}")
+    .WriteTo.File(
+        path: "logs/tnt-.log",
+        rollingInterval: RollingInterval.Day,
+        retainedFileCountLimit: 7,
+        outputTemplate: "[{Timestamp:yyyy-MM-dd HH:mm:ss.fff zzz}] [{Level:u3}] {Message:lj}{NewLine}{Exception}",
+        restrictedToMinimumLevel: builder.Environment.IsDevelopment() ? LogEventLevel.Debug : LogEventLevel.Warning
+    )
+    .CreateLogger();
+
+builder.Host.UseSerilog();
+
+try
+{
+    Log.Information("Starting TNT API application");
+
+// ────────────────────────────────────────────
+// .NET 10 Best Practice: Configure JSON options globally
+// ────────────────────────────────────────────
+builder.Services.Configure<JsonOptions>(options =>
+{
+    options.SerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+    options.SerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+    options.SerializerOptions.Converters.Add(new JsonStringEnumConverter());
+});
+
+// Enable Dapper snake_case to PascalCase property mapping
+DefaultTypeMap.MatchNamesWithUnderscores = true;
+
+// Register DateOnly/TimeOnly type handlers for Dapper ↔ Npgsql compatibility
+SqlMapper.AddTypeHandler(new DateOnlyTypeHandler());
+SqlMapper.AddTypeHandler(new TimeOnlyTypeHandler());
+
+// Load JWT settings from configuration
+var jwtSettings = builder.Configuration.GetSection("Jwt").Get<JwtSettings>();
+
+builder.Services.Configure<JwtSettings>(builder.Configuration.GetSection("Jwt"));
+
+// ────────────────────────────────────────────
+// Configure JWT Authentication
+// ────────────────────────────────────────────
+builder.Services.AddAuthentication(JwtBearerDefaults.AuthenticationScheme)
+    .AddJwtBearer(options =>
+    {
+        options.TokenValidationParameters = new TokenValidationParameters
+        {
+            ValidateIssuer = true,
+            ValidateAudience = true,
+            ValidateLifetime = true,
+            ValidateIssuerSigningKey = true,
+            ValidIssuer = jwtSettings.Issuer,
+            ValidAudience = jwtSettings.Audience,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+        };
+    });
+
+builder.Services.AddControllers()
+    .AddJsonOptions(options =>
+    {
+        options.JsonSerializerOptions.PropertyNamingPolicy = JsonNamingPolicy.CamelCase;
+        options.JsonSerializerOptions.DefaultIgnoreCondition = JsonIgnoreCondition.WhenWritingNull;
+        options.JsonSerializerOptions.Converters.Add(new JsonStringEnumConverter());
+    });
+
+// ────────────────────────────────────────────
+// Configure Localization and Globalization
+// ────────────────────────────────────────────
+var supportedCultures = new[]
+{
+    new CultureInfo("en-US"),
+    new CultureInfo("ne-NP")
+};
+
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+{
+    options.DefaultRequestCulture = new Microsoft.AspNetCore.Localization.RequestCulture("en-US");
+    options.SupportedCultures = supportedCultures;
+    options.SupportedUICultures = supportedCultures;
+    options.ApplyCurrentCultureToResponseHeaders = true;
+    // Accept language preference from: Query string, Cookie, Accept-Language header
+    options.RequestCultureProviders = new List<Microsoft.AspNetCore.Localization.IRequestCultureProvider>
+    {
+        new Microsoft.AspNetCore.Localization.QueryStringRequestCultureProvider(),
+        new Microsoft.AspNetCore.Localization.CookieRequestCultureProvider(),
+        new Microsoft.AspNetCore.Localization.AcceptLanguageHeaderRequestCultureProvider()
+    };
+});
+
+builder.Services.AddLocalization(options => options.ResourcesPath = "Resources");
+
+// ────────────────────────────────────────────
+// Global Authorization: Require authenticated user by default
+// ────────────────────────────────────────────
+builder.Services.AddAuthorizationBuilder()
+    .SetFallbackPolicy(new Microsoft.AspNetCore.Authorization.AuthorizationPolicyBuilder()
+        .RequireAuthenticatedUser()
+        .Build());
+
+// ────────────────────────────────────────────
+// .NET 10: Built-in OpenAPI (replaces Swashbuckle)
+// ────────────────────────────────────────────
+builder.Services.AddOpenApi();
+
+// ────────────────────────────────────────────
+// SignalR for real-time notifications
+// ────────────────────────────────────────────
+builder.Services.AddSignalR();
+
+// ────────────────────────────────────────────
+// .NET 10 Best Practice: ProblemDetails for consistent error responses
+// ────────────────────────────────────────────
+builder.Services.AddProblemDetails();
+
+// ────────────────────────────────────────────
+// .NET 10 Best Practice: IExceptionHandler for global error handling
+// ────────────────────────────────────────────
+builder.Services.AddExceptionHandler<GlobalExceptionHandler>();
+
+// ────────────────────────────────────────────
+// .NET 10 Performance: Response Compression
+// ────────────────────────────────────────────
+builder.Services.AddResponseCompression(options =>
+{
+    options.EnableForHttps = true;
+    options.Providers.Add<BrotliCompressionProvider>();
+    options.Providers.Add<GzipCompressionProvider>();
+    options.MimeTypes = ResponseCompressionDefaults.MimeTypes.Concat(
+        ["application/json", "text/json"]);
+});
+builder.Services.Configure<BrotliCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.Fastest;
+});
+builder.Services.Configure<GzipCompressionProviderOptions>(options =>
+{
+    options.Level = CompressionLevel.SmallestSize;
+});
+
+// ────────────────────────────────────────────
+// .NET 10 Performance: Rate Limiting to protect against abuse
+// ────────────────────────────────────────────
+builder.Services.AddRateLimiter(options =>
+{
+    options.RejectionStatusCode = StatusCodes.Status429TooManyRequests;
+    options.AddFixedWindowLimiter("fixed", limiterOptions =>
+    {
+        limiterOptions.PermitLimit = 100;
+        limiterOptions.Window = TimeSpan.FromMinutes(1);
+        limiterOptions.QueueProcessingOrder = QueueProcessingOrder.OldestFirst;
+        limiterOptions.QueueLimit = 10;
+    });
+});
+
+// ────────────────────────────────────────────
+// .NET 10 Performance: Output Caching for GET endpoints
+// ────────────────────────────────────────────
+builder.Services.AddOutputCache(options =>
+{
+    options.AddBasePolicy(builder => builder.Expire(TimeSpan.FromSeconds(30)));
+    options.AddPolicy("NoCache", builder => builder.NoCache());
+    options.AddPolicy("ShortCache", builder => builder.Expire(TimeSpan.FromSeconds(10)));
+    options.AddPolicy("LongCache", builder => builder.Expire(TimeSpan.FromMinutes(5)));
+});
+
+// ────────────────────────────────────────────
+// .NET 10 Performance: Memory Cache + HybridCache for distributed scenarios
+// ────────────────────────────────────────────
+builder.Services.AddMemoryCache();
+#pragma warning disable EXTEXP0018 // HybridCache is experimental in .NET 10
+builder.Services.AddHybridCache(options =>
+{
+    options.DefaultEntryOptions = new Microsoft.Extensions.Caching.Hybrid.HybridCacheEntryOptions
+    {
+        Expiration = TimeSpan.FromMinutes(10),
+        LocalCacheExpiration = TimeSpan.FromMinutes(5)
+    };
+});
+#pragma warning restore EXTEXP0018
+
+// Register AutoMapper scanning all assemblies to find profiles
+builder.Services.AddAutoMapper(AppDomain.CurrentDomain.GetAssemblies());
+
+// Register Dapper DB Context as singleton (if thread-safe)
+builder.Services.AddSingleton<IDapperDbContext, DapperDbContext>();
+
+// ────────────────────────────────────────────
+// Register PostgreSQL connection factory
+// Support DATABASE_URL env var (Render/Neon) or fall back to appsettings
+// ────────────────────────────────────────────
+var databaseUrl = Environment.GetEnvironmentVariable("DATABASE_URL");
+string connectionString;
+if (!string.IsNullOrEmpty(databaseUrl) && databaseUrl.StartsWith("postgresql://"))
+{
+    var uri = new Uri(databaseUrl);
+    var userInfo = uri.UserInfo.Split(':');
+    var host = uri.Host;
+    var port = uri.Port > 0 ? uri.Port : 5432;
+    var database = uri.AbsolutePath.TrimStart('/');
+    connectionString = $"Host={host};Port={port};Database={database};Username={userInfo[0]};Password={userInfo[1]};SSL Mode=Require";
+}
+else
+{
+    connectionString = databaseUrl ?? builder.Configuration.GetConnectionString("DefaultConnection")!;
+}
+builder.Services.AddTransient<IDbConnection>(sp => new NpgsqlConnection(connectionString));
+
+// ────────────────────────────────────────────
+// Register repository and service layers
+// ────────────────────────────────────────────
+builder.Services.AddScoped<IUserInformationRepository, UserInformationRepository>();
+builder.Services.AddScoped<IUserService, UserService>();
+builder.Services.AddScoped<ILoginService, LoginService>();
+builder.Services.AddScoped<ILoginRepository, LoginRepository>();
+builder.Services.AddScoped<IAuthTokenRepository, AuthTokenRepository>();
+builder.Services.AddScoped<ITokenService, TokenService>();
+builder.Services.AddScoped<ITransactionRepository, TransactionRepository>();
+builder.Services.AddScoped<ICreateTransactionService, CreateTransactionService>();
+builder.Services.AddScoped<ITransactionService, TransactionService>();
+builder.Services.AddScoped<IOrganizationRepository, OrganizationRepository>();
+builder.Services.AddScoped<IOrganizationService, OrganizationService>();
+builder.Services.AddScoped<IItineraryService, ItineraryService>();
+builder.Services.AddScoped<IItineraryRepository, ItineraryRepository>();
+builder.Services.AddScoped<IItineraryEnhancementsService, ItineraryEnhancementsService>();
+builder.Services.AddScoped<IItineraryEnhancementsRepository, ItineraryEnhancementsRepository>();
+builder.Services.AddScoped<IItineraryBuilderService, ItineraryBuilderService>();
+builder.Services.AddScoped<IItineraryBuilderRepository, ItineraryBuilderRepository>();
+builder.Services.AddScoped<IBookingService, BookingService>();
+builder.Services.AddScoped<IBookingRepository, BookingRepository>();
+builder.Services.AddScoped<IPricingService, PricingService>();
+builder.Services.AddScoped<IPricingRepository, PricingRepository>();
+
+// Tour & Travels - Itinerary Proposals
+builder.Services.AddScoped<IItineraryProposalService, ItineraryProposalService>();
+builder.Services.AddScoped<IItineraryProposalRepository, ItineraryProposalRepository>();
+
+// Tour & Travels - Inventory Management
+builder.Services.AddScoped<IHotelService, HotelService>();
+builder.Services.AddScoped<IHotelRepository, HotelRepository>();
+builder.Services.AddScoped<IVehicleService, VehicleService>();
+builder.Services.AddScoped<IVehicleRepository, VehicleRepository>();
+builder.Services.AddScoped<IGuideService, GuideService>();
+builder.Services.AddScoped<IGuideRepository, GuideRepository>();
+builder.Services.AddScoped<IActivityService, ActivityService>();
+builder.Services.AddScoped<IActivityRepository, ActivityRepository>();
+builder.Services.AddScoped<IAvailabilityService, AvailabilityService>();
+builder.Services.AddScoped<IAvailabilityRepository, AvailabilityRepository>();
+builder.Services.AddScoped<IDepartureManagementService, DepartureManagementService>();
+builder.Services.AddScoped<IDepartureManagementRepository, DepartureManagementRepository>();
+
+// Finance & Accounting (Tour & Travel)
+builder.Services.AddScoped<IFinanceRepository, FinanceRepository>();
+builder.Services.AddScoped<IFinanceService, FinanceService>();
+
+// Multi-Currency / Exchange Rates
+builder.Services.AddScoped<IExchangeRateRepository, ExchangeRateRepository>();
+builder.Services.AddScoped<IExchangeRateService, ExchangeRateService>();
+
+// Inventory Redesign – Location, Currency, Season, Routes, Mappings
+builder.Services.AddScoped<ILocationRepository, LocationRepository>();
+builder.Services.AddScoped<ILocationService, LocationService>();
+builder.Services.AddScoped<ICurrencyRepository, CurrencyRepository>();
+builder.Services.AddScoped<ICurrencyService, CurrencyService>();
+builder.Services.AddScoped<IExchangeRateV2Repository, ExchangeRateV2Repository>();
+builder.Services.AddScoped<IExchangeRateV2Service, ExchangeRateV2Service>();
+builder.Services.AddScoped<ISeasonRepository, SeasonRepository>();
+builder.Services.AddScoped<ISeasonService, SeasonService>();
+builder.Services.AddScoped<IHotelSeasonPricingRepository, HotelSeasonPricingRepository>();
+builder.Services.AddScoped<IHotelSeasonPricingService, HotelSeasonPricingService>();
+builder.Services.AddScoped<IVehicleRouteRepository, VehicleRouteRepository>();
+builder.Services.AddScoped<IVehicleRouteService, VehicleRouteService>();
+builder.Services.AddScoped<IGuideLocationRepository, GuideLocationRepository>();
+builder.Services.AddScoped<IGuideLocationService, GuideLocationService>();
+builder.Services.AddScoped<IActivityLocationRepository, ActivityLocationRepository>();
+builder.Services.AddScoped<IActivityLocationService, ActivityLocationService>();
+builder.Services.AddScoped<IAccommodationCategoryRepository, AccommodationCategoryRepository>();
+builder.Services.AddScoped<IAccommodationCategoryService, AccommodationCategoryService>();
+
+// Lead CRM, Quotations, B2B, Operations
+builder.Services.AddScoped<ILeadCrmRepository, LeadCrmRepository>();
+builder.Services.AddScoped<ILeadCrmService, LeadCrmService>();
+
+builder.Services.AddScoped<IDemoRequestRepository, DemoRequestRepository>();
+builder.Services.AddScoped<IDemoRequestService, DemoRequestService>();
+builder.Services.Configure<EmailSettings>(builder.Configuration.GetSection("EmailSettings"));
+builder.Services.Configure<CompanySettings>(builder.Configuration.GetSection("CompanySettings"));
+builder.Services.AddScoped<IEmailService, EmailService>();
+builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
+builder.Services.AddScoped<INotificationService, NotificationService>();
+
+// User Management with Roles & Permissions
+builder.Services.AddScoped<IUserManagementRepository, UserManagementRepository>();
+builder.Services.AddScoped<IUserManagementService, UserManagementService>();
+builder.Services.AddScoped<IRolePermissionRepository, RolePermissionRepository>();
+builder.Services.AddScoped<IRolePermissionService, RolePermissionService>();
+builder.Services.AddScoped<IPasswordResetRepository, PasswordResetRepository>();
+
+// Remittance module
+builder.Services.AddScoped<ICountryRepository, CountryRepository>();
+builder.Services.AddScoped<ICountryService, CountryService>();
+builder.Services.AddScoped<IPaymentTypeRepository, PaymentTypeRepository>();
+builder.Services.AddScoped<IPaymentTypeService, PaymentTypeService>();
+builder.Services.AddScoped<IAgentRepository, AgentRepository>();
+builder.Services.AddScoped<IAgentService, AgentService>();
+builder.Services.AddScoped<IServiceChargeSetupRepository, ServiceChargeSetupRepository>();
+builder.Services.AddScoped<IServiceChargeSetupService, ServiceChargeSetupService>();
+builder.Services.AddScoped<IFxRateSetupRepository, FxRateSetupRepository>();
+builder.Services.AddScoped<IFxRateSetupService, FxRateSetupService>();
+builder.Services.AddScoped<IBranchRepository, BranchRepository>();
+builder.Services.AddScoped<IBranchService, BranchService>();
+builder.Services.AddScoped<IBranchUserRepository, BranchUserRepository>();
+builder.Services.AddScoped<IBranchUserService, BranchUserService>();
+builder.Services.AddScoped<IAdministrativeDivisionRepository, AdministrativeDivisionRepository>();
+builder.Services.AddScoped<IAdministrativeDivisionService, AdministrativeDivisionService>();
+builder.Services.AddScoped<IAgentAccountRepository, AgentAccountRepository>();
+builder.Services.AddScoped<IAgentAccountService, AgentAccountService>();
+builder.Services.AddScoped<IAgentLedgerEntryRepository, AgentLedgerEntryRepository>();
+builder.Services.AddScoped<IAgentLedgerEntryService, AgentLedgerEntryService>();
+builder.Services.AddScoped<IConfigurationTypeRepository, ConfigurationTypeRepository>();
+builder.Services.AddScoped<IConfigurationTypeService, ConfigurationTypeService>();
+builder.Services.AddScoped<IConfigurationRepository, ConfigurationRepository>();
+builder.Services.AddScoped<IConfigurationService, ConfigurationService>();
+builder.Services.AddScoped<IDomesticServiceChargeSetupRepository, DomesticServiceChargeSetupRepository>();
+builder.Services.AddScoped<IDomesticServiceChargeSetupService, DomesticServiceChargeSetupService>();
+builder.Services.AddScoped<IVoucherRepository, VoucherRepository>();
+builder.Services.AddScoped<IVoucherService, VoucherService>();
+
+// Localization service
+builder.Services.AddScoped<ILocalizationService, LocalizationService>();
+
+// ────────────────────────────────────────────
+// Multi-Tenancy Services
+// ────────────────────────────────────────────
+builder.Services.AddHttpContextAccessor(); // Required for ITenantProvider
+builder.Services.AddScoped<Repository.Repositories.ITenantProvider, Bussiness.Services.JwtTenantProvider>();
+builder.Services.AddScoped<Repository.Repositories.IMultiTenantRepository, Repository.Repositories.MultiTenantRepository>();
+
+// Clinic module
+builder.Services.AddScoped<ITenantRepository, TenantRepository>();
+builder.Services.AddScoped<ITenantService, TenantService>();
+builder.Services.AddScoped<IPractitionerRepository, PractitionerRepository>();
+builder.Services.AddScoped<IPractitionerService, PractitionerService>();
+builder.Services.AddScoped<IPatientRepository, PatientRepository>();
+builder.Services.AddScoped<IPatientService, PatientService>();
+builder.Services.AddScoped<IClinicServiceRepository, ClinicServiceRepository>();
+builder.Services.AddScoped<IClinicServiceService, ClinicServiceService>();
+builder.Services.AddScoped<IAppointmentRepository, AppointmentRepository>();
+builder.Services.AddScoped<IAppointmentService, AppointmentService>();
+builder.Services.AddScoped<IInvoiceRepository, InvoiceRepository>();
+builder.Services.AddScoped<IInvoiceService, InvoiceService>();
+
+// ────────────────────────────────────────────
+// Configure CORS
+// ────────────────────────────────────────────
+var allowedOrigins = Environment.GetEnvironmentVariable("ALLOWED_ORIGINS")?.Split(',') 
+    ?? ["http://localhost:4200", "https://localhost:4200"];
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.WithOrigins(allowedOrigins)
+              .AllowAnyMethod()
+              .AllowAnyHeader()
+              .AllowCredentials();
+    });
+});
+
+var app = builder.Build();
+
+// ────────────────────────────────────────────
+// Middleware Pipeline (.NET 10 best-practice order)
+// ────────────────────────────────────────────
+
+// 1. Response Compression (must be first to compress all responses)
+app.UseResponseCompression();
+
+// 2. Exception Handler (ProblemDetails + IExceptionHandler)
+if (app.Environment.IsDevelopment())
+{
+    app.UseDeveloperExceptionPage();
+}
+else
+{
+    app.UseExceptionHandler();
+}
+
+// 3. Only redirect to HTTPS in development (Render handles SSL at proxy level)
+if (app.Environment.IsDevelopment())
+{
+    app.UseHttpsRedirection();
+}
+
+// 4. Rate Limiting
+app.UseRateLimiter();
+
+// 5. CORS
+app.UseCors();
+
+// 5a. Serve uploaded files (payment screenshots etc.)
+var uploadsPath = Path.Combine(app.Environment.ContentRootPath, "uploads");
+if (!Directory.Exists(uploadsPath)) Directory.CreateDirectory(uploadsPath);
+app.UseStaticFiles(new StaticFileOptions
+{
+    FileProvider = new Microsoft.Extensions.FileProviders.PhysicalFileProvider(uploadsPath),
+    RequestPath = "/uploads"
+});
+
+// 5b. Request Localization
+app.UseRequestLocalization();
+
+// 6. Authentication & Authorization
+app.UseAuthentication();
+app.UseMiddleware<server.MiddleWare.TokenRevocationMiddleware>();
+
+// 6b. Tenant Validation Middleware (after authentication, before authorization)
+app.UseTenantMiddleware();
+
+app.UseAuthorization();
+
+// 7. Output Caching
+app.UseOutputCache();
+
+// 8. Map endpoints
+app.MapControllers();
+
+// 8b. SignalR Hub
+app.MapHub<NotificationHub>("/hubs/notifications");
+
+// 9. .NET 10: Built-in OpenAPI endpoint at /openapi/v1.json
+app.MapOpenApi().AllowAnonymous();
+
+// 10. Scalar API Reference UI (replaces Swagger UI)
+app.MapScalarApiReference(options => options.WithDefaultHttpClient(ScalarTarget.CSharp, ScalarClient.HttpClient)).AllowAnonymous();
+
+    app.Run();
+}
+catch (Exception ex)
+{
+    Log.Fatal(ex, "Application terminated unexpectedly");
+}
+finally
+{
+    Log.Information("Shutting down TNT API application");
+    Log.CloseAndFlush();
+}

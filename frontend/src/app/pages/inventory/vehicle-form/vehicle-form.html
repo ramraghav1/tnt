@@ -1,0 +1,97 @@
+<p-toast></p-toast>
+
+<p-fluid>
+  <div class="flex flex-col gap-8">
+    <div class="card flex flex-col gap-6">
+      <!-- Title -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (click)="cancel()" [pTooltip]="'common.back' | translate" tooltipPosition="bottom"></button>
+        <h2 class="text-2xl font-bold m-0">{{ (isEditMode ? 'inventory.editVehicle' : 'inventory.addVehicle') | translate }}</h2>
+      </div>
+
+      <!-- Page loading spinner -->
+      <div *ngIf="pageLoading" class="flex justify-center items-center py-16">
+        <p-progressSpinner strokeWidth="4" animationDuration=".8s" />
+      </div>
+
+      <form *ngIf="!pageLoading" (ngSubmit)="onSubmit()" #vehicleForm="ngForm">
+        <!-- Basic Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.basicInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.vehicleType' | translate }} *</label>
+              <input pInputText [(ngModel)]="vehicle.vehicleType" name="vehicleType" required placeholder="e.g., Bus, Car, Van" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.model' | translate }} *</label>
+              <input pInputText [(ngModel)]="vehicle.model" name="model" required placeholder="Vehicle model" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.registrationNumber' | translate }} *</label>
+              <input pInputText [(ngModel)]="vehicle.registrationNumber" name="registrationNumber" required placeholder="Registration number" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.capacity' | translate }} *</label>
+              <p-inputNumber [(ngModel)]="vehicle.capacity" name="capacity" [min]="1" [showButtons]="true" suffix=" seats" class="w-full"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.pricePerDay' | translate }} (USD) *</label>
+              <p-inputNumber [(ngModel)]="vehicle.pricePerDay" name="pricePerDay" mode="currency" currency="USD" [min]="0" class="w-full"></p-inputNumber>
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full">
+            <label>{{ 'inventory.features' | translate }}</label>
+            <input pInputText [(ngModel)]="featuresText" name="features" [placeholder]="'inventory.enterFeaturesCommaSeparated' | translate" class="w-full" />
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="my-4">
+
+        <!-- Driver Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.driverInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.driverName' | translate }}</label>
+              <input pInputText [(ngModel)]="vehicle.driverName" name="driverName" placeholder="Driver name" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.driverContact' | translate }}</label>
+              <input pInputText [(ngModel)]="vehicle.driverContact" name="driverContact" placeholder="Driver contact number" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.insuranceExpiry' | translate }}</label>
+              <p-datePicker [(ngModel)]="vehicle.insuranceExpiry" name="insuranceExpiry" [iconDisplay]="'input'" dateFormat="yy-mm-dd" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.permitExpiry' | translate }}</label>
+              <p-datePicker [(ngModel)]="vehicle.permitExpiry" name="permitExpiry" [iconDisplay]="'input'" dateFormat="yy-mm-dd" class="w-full" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-2 mt-6">
+          <button pButton type="button" [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+          <button pButton type="submit" [label]="'common.save' | translate" [loading]="loading" icon="pi pi-check"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</p-fluid>

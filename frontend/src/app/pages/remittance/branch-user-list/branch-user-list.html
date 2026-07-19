@@ -1,0 +1,122 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <button pButton icon="pi pi-arrow-left" class="mr-2" severity="secondary" (click)="goBackToBranches()" pTooltip="Back to Branches"></button>
+            <h5 class="m-0 mx-3">Users — {{ branchName }}</h5>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New User" icon="pi pi-plus" severity="secondary" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="users"
+        [rows]="10"
+        [paginator]="true"
+        [loading]="loading"
+        [globalFilterFields]="['fullName', 'email', 'phone', 'role', 'username']"
+        [rowHover]="true"
+        dataKey="id"
+        responsiveLayout="scroll"
+    >
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <span>Showing {{ users.length }} users</span>
+                <p-iconfield>
+                    <p-inputicon styleClass="pi pi-search" />
+                    <input #filterInput pInputText type="text" placeholder="Search..." (input)="onGlobalFilter(dt, $event)" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="fullName">Full Name <p-sortIcon field="fullName" /></th>
+                <th pSortableColumn="email">Email <p-sortIcon field="email" /></th>
+                <th>Phone</th>
+                <th pSortableColumn="role">Role <p-sortIcon field="role" /></th>
+                <th pSortableColumn="username">Username <p-sortIcon field="username" /></th>
+                <th>Status</th>
+                <th style="width: 10rem">Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-item>
+            <tr>
+                <td>{{ item.fullName }}</td>
+                <td>{{ item.email }}</td>
+                <td>{{ item.phone }}</td>
+                <td><p-tag [value]="item.role" severity="info" /></td>
+                <td>{{ item.username }}</td>
+                <td><p-tag [value]="item.isActive ? 'Active' : 'Inactive'" [severity]="item.isActive ? 'success' : 'danger'" /></td>
+                <td>
+                    <button pButton icon="pi pi-eye" class="mr-1" rounded outlined severity="info" (click)="viewDetail(item)" pTooltip="View Detail"></button>
+                    <button pButton icon="pi pi-pencil" class="mr-1" rounded outlined severity="success" (click)="editItem(item)" pTooltip="Edit"></button>
+                    <button pButton icon="pi pi-trash" rounded outlined severity="danger" (click)="deleteItem(item)" pTooltip="Delete"></button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+            <tr><td colspan="7" class="text-center p-4">No users found for this branch.</td></tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- View Detail Popup -->
+<p-dialog header="User Details" [(visible)]="detailDialogVisible" [modal]="true" [style]="{ width: '500px' }" [closable]="true">
+    @if (detailItem) {
+    <div class="grid grid-cols-2 gap-4 p-4">
+        <div><label class="font-semibold block mb-1">Full Name</label><span>{{ detailItem.fullName }}</span></div>
+        <div><label class="font-semibold block mb-1">Email</label><span>{{ detailItem.email }}</span></div>
+        <div><label class="font-semibold block mb-1">Phone</label><span>{{ detailItem.phone }}</span></div>
+        <div><label class="font-semibold block mb-1">Role</label><p-tag [value]="detailItem.role" severity="info" /></div>
+        <div><label class="font-semibold block mb-1">Username</label><span>{{ detailItem.username }}</span></div>
+        <div><label class="font-semibold block mb-1">Status</label><p-tag [value]="detailItem.isActive ? 'Active' : 'Inactive'" [severity]="detailItem.isActive ? 'success' : 'danger'" /></div>
+        <div><label class="font-semibold block mb-1">Branch</label><span>{{ detailItem.branchName }}</span></div>
+        <div><label class="font-semibold block mb-1">Created</label><span>{{ detailItem.createdAt | date:'medium' }}</span></div>
+    </div>
+    <ng-template #footer>
+        <button pButton label="Close" icon="pi pi-times" severity="secondary" (click)="detailDialogVisible = false"></button>
+    </ng-template>
+    }
+</p-dialog>
+
+<!-- Create/Edit Dialog -->
+<p-dialog [header]="editMode ? 'Edit User' : 'New User'" [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '600px' }" [closable]="true">
+    <p-fluid>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Full Name *</label>
+                <input pInputText [(ngModel)]="selectedItem.fullName" placeholder="Full Name" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Email *</label>
+                <input pInputText [(ngModel)]="selectedItem.email" placeholder="Email" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Phone</label>
+                <input pInputText [(ngModel)]="selectedItem.phone" placeholder="Phone" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Role *</label>
+                <p-select [(ngModel)]="selectedItem.role" [options]="roles" optionLabel="label" optionValue="value" placeholder="Select Role" [appendTo]="'body'" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Username *</label>
+                <input pInputText [(ngModel)]="selectedItem.username" placeholder="Username" />
+            </div>
+            @if (editMode) {
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Active</label>
+                <p-toggleswitch [(ngModel)]="selectedItem.isActive" />
+            </div>
+            }
+        </div>
+    </p-fluid>
+    <ng-template #footer>
+        <button pButton label="Cancel" icon="pi pi-times" severity="secondary" (click)="dialogVisible = false"></button>
+        <button pButton label="Save" icon="pi pi-check" (click)="saveItem()" [disabled]="!selectedItem.fullName || !selectedItem.email || !selectedItem.role || !selectedItem.username"></button>
+    </ng-template>
+</p-dialog>

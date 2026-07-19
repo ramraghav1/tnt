@@ -1,0 +1,11 @@
+:host ::ng-deep {
+    .p-chips,
+    .p-inputnumber,
+    .p-dropdown {
+        width: 100%;
+        
+        input, .p-chips-multiple-container, .p-dropdown {
+            width: 100%;
+        }
+    }
+}

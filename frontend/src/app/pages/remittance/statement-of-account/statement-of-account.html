@@ -1,0 +1,162 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <h4>Statement of Account</h4>
+
+    <!-- Filter Panel -->
+    <div class="grid mt-3 mb-4" style="gap:1rem">
+        <div class="col-12 md:col-2">
+            <label class="block mb-1"><b>Entity Type</b></label>
+            <p-select [(ngModel)]="entityType" [options]="entityTypes" optionLabel="label" optionValue="value"
+                      placeholder="Select" (onChange)="onEntityTypeChange()" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2" *ngIf="entityType === 'AGENT'">
+            <label class="block mb-1"><b>Agent</b></label>
+            <p-select [(ngModel)]="selectedAgentId" [options]="agents" optionLabel="name" optionValue="id"
+                      placeholder="Select Agent" [filter]="true" (onChange)="onAgentChange()" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2" *ngIf="entityType === 'AGENT' && agentAccounts.length > 0">
+            <label class="block mb-1"><b>Account</b></label>
+            <p-select [(ngModel)]="selectedAccountId" [options]="agentAccounts" [optionLabel]="'accountLabel'"
+                      optionValue="id" placeholder="Select Account" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2" *ngIf="entityType === 'BRANCH'">
+            <label class="block mb-1"><b>Agent</b></label>
+            <p-select [(ngModel)]="selectedAgentId" [options]="agents" optionLabel="name" optionValue="id"
+                      placeholder="Select Agent" [filter]="true" (onChange)="loadBranches()" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2" *ngIf="entityType === 'BRANCH' && branches.length > 0">
+            <label class="block mb-1"><b>Branch</b></label>
+            <p-select [(ngModel)]="selectedBranchId" [options]="branches" optionLabel="branchName" optionValue="id"
+                      placeholder="Select Branch" [filter]="true" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2">
+            <label class="block mb-1"><b>From Date</b></label>
+            <p-datepicker [(ngModel)]="fromDate" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2">
+            <label class="block mb-1"><b>To Date</b></label>
+            <p-datepicker [(ngModel)]="toDate" dateFormat="yy-mm-dd" [showIcon]="true" [style]="{'width':'100%'}" />
+        </div>
+        <div class="col-12 md:col-2 flex align-items-end" style="gap:0.5rem">
+            <p-button label="Load" icon="pi pi-search" (onClick)="loadStatement()" [disabled]="!canLoad()" />
+            <p-button label="Clear" icon="pi pi-times" severity="secondary" [text]="true" (onClick)="clearFilter()" />
+        </div>
+    </div>
+
+    <!-- Summary Cards -->
+    <div *ngIf="statement" class="grid mb-4" style="gap:1rem">
+        <div class="col-12 md:col-3">
+            <p-card>
+                <div class="text-center">
+                    <div class="text-500 mb-1">Entity</div>
+                    <div class="text-xl font-bold">{{ statement.entityType }}</div>
+                    <div class="text-600">{{ statement.agentName || statement.branchName }}</div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-2">
+            <p-card>
+                <div class="text-center">
+                    <div class="text-500 mb-1">Opening Balance</div>
+                    <div class="text-xl font-bold text-blue-500">{{ statement.openingBalance | number:'1.2-2' }}</div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-2">
+            <p-card>
+                <div class="text-center">
+                    <div class="text-500 mb-1">Total Credit</div>
+                    <div class="text-xl font-bold text-green-500">{{ statement.totalCredit | number:'1.2-2' }}</div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-2">
+            <p-card>
+                <div class="text-center">
+                    <div class="text-500 mb-1">Total Debit</div>
+                    <div class="text-xl font-bold text-red-500">{{ statement.totalDebit | number:'1.2-2' }}</div>
+                </div>
+            </p-card>
+        </div>
+        <div class="col-12 md:col-2">
+            <p-card>
+                <div class="text-center">
+                    <div class="text-500 mb-1">Closing Balance</div>
+                    <div class="text-xl font-bold text-purple-500">{{ statement.closingBalance | number:'1.2-2' }}</div>
+                </div>
+            </p-card>
+        </div>
+    </div>
+
+    <!-- Daily Summary Table -->
+    <div *ngIf="statement && statement.dailySummaries.length > 0" class="mb-4">
+        <h5>Daily Summary</h5>
+        <p-table [value]="statement.dailySummaries" styleClass="p-datatable-sm" responsiveLayout="scroll">
+            <ng-template #header>
+                <tr>
+                    <th>Date</th>
+                    <th style="text-align:right">Opening</th>
+                    <th style="text-align:right">Credit</th>
+                    <th style="text-align:right">Debit</th>
+                    <th style="text-align:right">Closing</th>
+                    <th style="text-align:center">Txn Count</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-day>
+                <tr>
+                    <td>{{ day.date | date:'mediumDate' }}</td>
+                    <td style="text-align:right">{{ day.openingBalance | number:'1.2-2' }}</td>
+                    <td style="text-align:right; color:green">{{ day.totalCredit | number:'1.2-2' }}</td>
+                    <td style="text-align:right; color:red">{{ day.totalDebit | number:'1.2-2' }}</td>
+                    <td style="text-align:right; font-weight:600">{{ day.closingBalance | number:'1.2-2' }}</td>
+                    <td style="text-align:center">{{ day.transactionCount }}</td>
+                </tr>
+            </ng-template>
+        </p-table>
+    </div>
+
+    <!-- Transaction Detail Table -->
+    <div *ngIf="statement">
+        <h5>Transaction Details</h5>
+        <p-table [value]="statement.entries" [paginator]="true" [rows]="20"
+                 [rowsPerPageOptions]="[10, 20, 50, 100]"
+                 styleClass="p-datatable-sm" responsiveLayout="scroll" [loading]="loading">
+            <ng-template #header>
+                <tr>
+                    <th pSortableColumn="voucherNumber">Voucher # <p-sortIcon field="voucherNumber"/></th>
+                    <th pSortableColumn="voucherDate">Date <p-sortIcon field="voucherDate"/></th>
+                    <th pSortableColumn="mode">Mode <p-sortIcon field="mode"/></th>
+                    <th pSortableColumn="referenceType">Ref Type <p-sortIcon field="referenceType"/></th>
+                    <th>Ref ID</th>
+                    <th>Description</th>
+                    <th style="text-align:right">Credit</th>
+                    <th style="text-align:right">Debit</th>
+                    <th style="text-align:right">Balance</th>
+                </tr>
+            </ng-template>
+            <ng-template #body let-entry>
+                <tr>
+                    <td>{{ entry.voucherNumber }}</td>
+                    <td>{{ entry.voucherDate | date:'short' }}</td>
+                    <td>
+                        <p-tag [value]="entry.mode" [severity]="entry.mode === 'CR' ? 'success' : 'danger'" />
+                    </td>
+                    <td>{{ entry.referenceType }}</td>
+                    <td>{{ entry.referenceId }}</td>
+                    <td>{{ entry.description }}</td>
+                    <td style="text-align:right; color:green">
+                        {{ entry.mode === 'CR' ? (entry.amount | number:'1.2-2') : '' }}
+                    </td>
+                    <td style="text-align:right; color:red">
+                        {{ entry.mode === 'DR' ? (entry.amount | number:'1.2-2') : '' }}
+                    </td>
+                    <td style="text-align:right; font-weight:600">{{ entry.balanceAfter | number:'1.2-2' }}</td>
+                </tr>
+            </ng-template>
+            <ng-template #emptymessage>
+                <tr><td colspan="9" class="text-center p-4">No entries found for the selected period</td></tr>
+            </ng-template>
+        </p-table>
+    </div>
+</div>

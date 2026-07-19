@@ -1,0 +1,45 @@
+<div class="card">
+    <div class="font-semibold text-xl mb-4">User List</div>
+    <p-table
+        #dt
+        [value]="users"
+        [paginator]="true"
+        [rows]="10"
+        [showGridlines]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['userFullName', 'address', 'emailAddress', 'mobileNumber']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-column sm:flex-row">
+                <button pButton label="Clear" class="p-button-outlined mb-2" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search users..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template pTemplate="header">
+            <tr>
+                <th>User Full Name</th>
+                <th>Address</th>
+                <th>Email Address</th>
+                <th>Mobile Number</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-user>
+            <tr>
+                <td>{{ user.userFullName }}</td>
+                <td>{{ user.address }}</td>
+                <td>{{ user.emailAddress }}</td>
+                <td>{{ user.mobileNumber }}</td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="4">No users found.</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

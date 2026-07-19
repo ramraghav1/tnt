@@ -1,0 +1,103 @@
+<p-toast></p-toast>
+
+<!-- HEADER -->
+<div class="card mb-4">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <h2 class="text-2xl font-bold m-0">Agent Commissions</h2>
+            <p class="text-gray-500 mt-1 mb-0">Track and manage commissions paid to travel agents.</p>
+        </div>
+        <div class="flex gap-2 items-center">
+            <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" (click)="loadCommissions()" pTooltip="Refresh"></p-button>
+            <p-button label="Record Commission" icon="pi pi-plus" (click)="openAddDialog()"></p-button>
+        </div>
+    </div>
+</div>
+
+<!-- LOADING -->
+<div *ngIf="loading" class="flex justify-center py-12">
+    <p-progressSpinner strokeWidth="4"></p-progressSpinner>
+</div>
+
+<!-- TABLE -->
+<div class="card" *ngIf="!loading">
+    <p-table [value]="commissions" [paginator]="true" [rows]="15" [rowHover]="true"
+        dataKey="id" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="bookingReference">Booking Ref <p-sortIcon field="bookingReference"></p-sortIcon></th>
+                <th pSortableColumn="agentName">Agent <p-sortIcon field="agentName"></p-sortIcon></th>
+                <th pSortableColumn="commissionRate" style="text-align:right">Rate <p-sortIcon field="commissionRate"></p-sortIcon></th>
+                <th pSortableColumn="commissionAmount" style="text-align:right">Amount <p-sortIcon field="commissionAmount"></p-sortIcon></th>
+                <th>Notes</th>
+                <th>Status</th>
+                <th style="width:90px">Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-commission>
+            <tr>
+                <td><span class="font-mono font-semibold">{{ commission.bookingReference }}</span></td>
+                <td>{{ commission.agentName }}</td>
+                <td style="text-align:right">{{ commission.commissionRate }}%</td>
+                <td style="text-align:right" class="font-semibold">{{ commission.currency }} {{ commission.commissionAmount | number:'1.2-2' }}</td>
+                <td><small class="text-gray-500">{{ commission.notes ?? '—' }}</small></td>
+                <td><p-tag [value]="commission.status | titlecase" [severity]="getStatusSeverity(commission.status)" [rounded]="true"></p-tag></td>
+                <td>
+                    <div class="flex gap-1" *ngIf="commission.status === 'pending'">
+                        <button pButton icon="pi pi-check"
+                            class="p-button-rounded p-button-outlined p-button-success p-button-sm"
+                            pTooltip="Mark Paid" (click)="updateStatus(commission, 'paid')"></button>
+                        <button pButton icon="pi pi-times"
+                            class="p-button-rounded p-button-outlined p-button-danger p-button-sm"
+                            pTooltip="Cancel" (click)="updateStatus(commission, 'cancelled')"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center text-gray-400 py-8">
+                    <i class="pi pi-percentage text-3xl block mb-2"></i> No commissions recorded
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- ADD COMMISSION DIALOG -->
+<p-dialog header="Record Commission" [(visible)]="showDialog" [modal]="true" [style]="{width:'460px'}" [draggable]="false">
+    <div class="grid grid-cols-1 gap-3 py-1">
+        <div>
+            <label class="block text-sm font-medium mb-1">Booking ID <span class="text-red-500">*</span></label>
+            <p-inputNumber [(ngModel)]="form.bookingId" [min]="1" styleClass="w-full"></p-inputNumber>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Agent Name <span class="text-red-500">*</span></label>
+            <input pInputText [(ngModel)]="form.agentName" placeholder="Agent full name" class="w-full" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-sm font-medium mb-1">Rate (%)</label>
+                <p-inputNumber [(ngModel)]="form.commissionRate" [min]="0" [max]="100" [minFractionDigits]="2" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Amount <span class="text-red-500">*</span></label>
+                <p-inputNumber [(ngModel)]="form.commissionAmount" [min]="0" [minFractionDigits]="2" styleClass="w-full"></p-inputNumber>
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Currency</label>
+            <p-select [options]="currencyOptions" [(ngModel)]="form.currency"
+                optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Notes</label>
+            <input pInputText [(ngModel)]="form.notes" placeholder="Optional notes" class="w-full" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (click)="showDialog = false"></p-button>
+        <p-button label="Save" icon="pi pi-check" [loading]="saving"
+            [disabled]="!form.agentName || !form.commissionAmount" (click)="saveCommission()"></p-button>
+    </ng-template>
+</p-dialog>

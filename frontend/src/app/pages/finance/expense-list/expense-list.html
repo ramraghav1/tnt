@@ -1,0 +1,132 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<!-- HEADER -->
+<div class="card mb-4">
+    <div class="flex justify-between items-center flex-wrap gap-3">
+        <div>
+            <h2 class="text-2xl font-bold m-0">Expenses</h2>
+            <p class="text-gray-500 mt-1 mb-0" *ngIf="expenses.length > 0">
+                {{ expenses.length }} record(s) &bull; Total: <strong>{{ expenses[0]?.currency ?? 'NPR' }} {{ getTotalExpenses() | number:'1.2-2' }}</strong>
+            </p>
+            <p class="text-gray-500 mt-1 mb-0" *ngIf="expenses.length === 0">Track all operational expenses.</p>
+        </div>
+        <div class="flex gap-2 flex-wrap items-center">
+            <p-iconfield>
+                <p-inputicon styleClass="pi pi-search"></p-inputicon>
+                <input pInputText [(ngModel)]="globalFilter" placeholder="Search expenses..." class="w-48" />
+            </p-iconfield>
+            <p-button icon="pi pi-refresh" severity="secondary" [outlined]="true" (click)="loadExpenses()" pTooltip="Refresh"></p-button>
+            <p-button label="Add Expense" icon="pi pi-plus" (click)="openAddDialog()"></p-button>
+        </div>
+    </div>
+</div>
+
+<!-- LOADING -->
+<div *ngIf="loading" class="flex justify-center py-12">
+    <p-progressSpinner strokeWidth="4"></p-progressSpinner>
+</div>
+
+<!-- TABLE -->
+<div class="card" *ngIf="!loading">
+    <p-table [value]="expenses" [paginator]="true" [rows]="15" [rowHover]="true"
+        [globalFilterFields]="['expenseName','category','vendor','receiptNumber']"
+        dataKey="id" responsiveLayout="scroll">
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="expenseName">Name <p-sortIcon field="expenseName"></p-sortIcon></th>
+                <th pSortableColumn="category">Category <p-sortIcon field="category"></p-sortIcon></th>
+                <th>Booking Ref</th>
+                <th pSortableColumn="vendor">Vendor <p-sortIcon field="vendor"></p-sortIcon></th>
+                <th pSortableColumn="expenseDate">Date <p-sortIcon field="expenseDate"></p-sortIcon></th>
+                <th pSortableColumn="amount" style="text-align:right">Amount <p-sortIcon field="amount"></p-sortIcon></th>
+                <th>Receipt</th>
+                <th style="width:90px">Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="body" let-expense>
+            <tr>
+                <td><strong>{{ expense.expenseName }}</strong></td>
+                <td><p-tag [value]="expense.category" severity="secondary" [rounded]="true"></p-tag></td>
+                <td>{{ expense.bookingReference ?? '—' }}</td>
+                <td>{{ expense.vendor ?? '—' }}</td>
+                <td>{{ expense.expenseDate | date:'dd MMM yyyy' }}</td>
+                <td style="text-align:right" class="font-semibold">{{ expense.currency }} {{ expense.amount | number:'1.2-2' }}</td>
+                <td>{{ expense.receiptNumber ?? '—' }}</td>
+                <td>
+                    <div class="flex gap-1">
+                        <button pButton icon="pi pi-pencil"
+                            class="p-button-rounded p-button-outlined p-button-info p-button-sm"
+                            pTooltip="Edit" (click)="openEditDialog(expense)"></button>
+                        <button pButton icon="pi pi-trash"
+                            class="p-button-rounded p-button-outlined p-button-danger p-button-sm"
+                            pTooltip="Delete" (click)="confirmDelete(expense)"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center text-gray-400 py-8">
+                    <i class="pi pi-money-bill text-3xl block mb-2"></i> No expenses recorded
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- ADD / EDIT DIALOG -->
+<p-dialog [header]="isEdit ? 'Edit Expense' : 'Add Expense'" [(visible)]="showDialog"
+    [modal]="true" [style]="{width:'520px'}" [draggable]="false">
+    <div class="grid grid-cols-1 gap-3 py-1">
+        <div>
+            <label class="block text-sm font-medium mb-1">Expense Name <span class="text-red-500">*</span></label>
+            <input pInputText [(ngModel)]="form.expenseName" placeholder="e.g. Hotel accommodation" class="w-full" />
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-sm font-medium mb-1">Category <span class="text-red-500">*</span></label>
+                <p-select [options]="categoryOptions" [(ngModel)]="form.category"
+                    optionLabel="label" optionValue="value" placeholder="Select" styleClass="w-full"></p-select>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Currency</label>
+                <p-select [options]="currencyOptions" [(ngModel)]="form.currency"
+                    optionLabel="label" optionValue="value" styleClass="w-full"></p-select>
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-sm font-medium mb-1">Amount <span class="text-red-500">*</span></label>
+                <p-inputNumber [(ngModel)]="form.amount" [min]="0" [minFractionDigits]="2" styleClass="w-full"></p-inputNumber>
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Date <span class="text-red-500">*</span></label>
+                <input pInputText type="date" [(ngModel)]="form.expenseDate" class="w-full" />
+            </div>
+        </div>
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-sm font-medium mb-1">Vendor</label>
+                <input pInputText [(ngModel)]="form.vendor" placeholder="Vendor name" class="w-full" />
+            </div>
+            <div>
+                <label class="block text-sm font-medium mb-1">Receipt #</label>
+                <input pInputText [(ngModel)]="form.receiptNumber" placeholder="Receipt number" class="w-full" />
+            </div>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Booking ID <span class="text-gray-400 text-xs">(optional)</span></label>
+            <p-inputNumber [(ngModel)]="form.bookingId" [min]="1" placeholder="Link to a booking" styleClass="w-full"></p-inputNumber>
+        </div>
+        <div>
+            <label class="block text-sm font-medium mb-1">Notes</label>
+            <input pInputText [(ngModel)]="form.notes" placeholder="Additional notes" class="w-full" />
+        </div>
+    </div>
+    <ng-template pTemplate="footer">
+        <p-button label="Cancel" severity="secondary" [outlined]="true" (click)="showDialog = false"></p-button>
+        <p-button [label]="isEdit ? 'Update' : 'Save'" icon="pi pi-check" [loading]="saving"
+            [disabled]="!form.expenseName || !form.category || !form.amount" (click)="saveExpense()"></p-button>
+    </ng-template>
+</p-dialog>

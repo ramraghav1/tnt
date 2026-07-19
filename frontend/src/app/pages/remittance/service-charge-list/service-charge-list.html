@@ -1,0 +1,79 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <span class="font-semibold text-xl">Service Charge Setups</span>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New Service Charge" icon="pi pi-plus" severity="success" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="setups"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [showGridlines]="true"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['sendingCountryName', 'receivingCountryName', 'paymentTypeName', 'agentName', 'chargeMode']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="sendingCountryName">Sending Country <p-sortIcon field="sendingCountryName"></p-sortIcon></th>
+                <th pSortableColumn="receivingCountryName">Receiving Country <p-sortIcon field="receivingCountryName"></p-sortIcon></th>
+                <th pSortableColumn="paymentTypeName">Payment Type <p-sortIcon field="paymentTypeName"></p-sortIcon></th>
+                <th pSortableColumn="agentName">Agent <p-sortIcon field="agentName"></p-sortIcon></th>
+                <th pSortableColumn="chargeMode">Charge Mode <p-sortIcon field="chargeMode"></p-sortIcon></th>
+                <th>Status</th>
+                <th style="min-width: 8rem">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-setup>
+            <tr>
+                <td class="font-semibold">{{ setup.sendingCountryName }}</td>
+                <td class="font-semibold">{{ setup.receivingCountryName }}</td>
+                <td>{{ setup.paymentTypeName }}</td>
+                <td class="text-color-secondary">{{ setup.agentName || 'Default (All)' }}</td>
+                <td>
+                    <p-tag [value]="setup.chargeMode" [severity]="setup.chargeMode === 'Flat' ? 'info' : 'warn'"></p-tag>
+                </td>
+                <td>
+                    <p-tag [value]="setup.isActive ? 'Active' : 'Inactive'" [severity]="setup.isActive ? 'success' : 'danger'"></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-success p-button-sm" (click)="viewDetail(setup)" pTooltip="Edit"></button>
+                        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" (click)="deleteSetup(setup)" pTooltip="Delete"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-money-bill text-4xl"></i>
+                        <span>No service charge setups found. Click "New Service Charge" to create one.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

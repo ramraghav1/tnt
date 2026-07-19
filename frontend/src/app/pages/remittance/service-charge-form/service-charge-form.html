@@ -1,0 +1,309 @@
+<p-toast></p-toast>
+
+<!-- Loading -->
+<div *ngIf="loading" class="flex justify-center items-center py-8">
+    <i class="pi pi-spin pi-spinner text-3xl text-primary"></i>
+</div>
+
+<div *ngIf="!loading" class="surface-ground p-4 w-full">
+
+    <!-- Back Button -->
+    <button pButton icon="pi pi-arrow-left" label="Back to List" class="p-button-text mb-3" (click)="goBack()"></button>
+
+    <!-- ================================= -->
+    <!-- SECTION 1: Corridor Setup         -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <h2 class="text-2xl font-bold mb-2">
+            <i class="pi pi-money-bill mr-2"></i>
+            {{ editMode ? 'Edit Service Charge Setup' : 'New Service Charge Setup' }}
+        </h2>
+        <p class="text-color-secondary mb-4">Define the remittance corridor, payment type, optional agent, and charge structure.</p>
+
+        <p-fluid>
+            <!-- Row 1: Sending & Receiving Country -->
+            <div class="font-semibold text-lg mb-3 mt-2">
+                <i class="pi pi-globe mr-2"></i>Corridor
+            </div>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="sendingCountry" class="font-semibold">Sending Country *</label>
+                    <p-select
+                        id="sendingCountry"
+                        [options]="countries"
+                        [(ngModel)]="sendingCountryId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select sending country"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                        (onChange)="onSendingCountryChange()"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="receivingCountry" class="font-semibold">Receiving Country *</label>
+                    <p-select
+                        id="receivingCountry"
+                        [options]="countries"
+                        [(ngModel)]="receivingCountryId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select receiving country"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                    ></p-select>
+                </div>
+            </div>
+
+            <!-- Row 2: Payment Type & Agent -->
+            <div class="font-semibold text-lg mb-3">
+                <i class="pi pi-credit-card mr-2"></i>Payment & Agent
+            </div>
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="paymentType" class="font-semibold">Payment Type *</label>
+                    <p-select
+                        id="paymentType"
+                        [options]="paymentTypes"
+                        [(ngModel)]="paymentTypeId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Select payment type"
+                        [filter]="true"
+                        filterPlaceholder="Search..."
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="agent" class="font-semibold">Agent <span class="text-color-secondary text-sm">(Optional - leave empty for default)</span></label>
+                    <p-select
+                        id="agent"
+                        [options]="filteredAgents"
+                        [(ngModel)]="agentId"
+                        optionLabel="name"
+                        optionValue="id"
+                        placeholder="Default (All Agents)"
+                        [filter]="true"
+                        filterPlaceholder="Search agents..."
+                        [showClear]="true"
+                    ></p-select>
+                </div>
+            </div>
+
+            <!-- Row 3: Currency & Active -->
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full md:w-1/3">
+                    <label for="currency" class="font-semibold">Currency *</label>
+                    <input pInputText id="currency" [(ngModel)]="currency" placeholder="e.g. USD, NPR" maxlength="3"
+                           (ngModelChange)="onCurrencyChange()" class="uppercase" />
+                </div>
+                <div class="flex items-end gap-2 w-full md:w-1/3 pb-1">
+                    <p-toggleswitch id="isActive" [(ngModel)]="isActive"></p-toggleswitch>
+                    <label for="isActive" class="font-semibold">Active</label>
+                </div>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 2: Charge Mode            -->
+    <!-- ================================= -->
+    <div class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-3">
+            <i class="pi pi-sliders-h mr-2"></i>Charge Mode *
+        </div>
+        <div class="flex flex-col md:flex-row gap-6 mb-4">
+            <div class="flex items-center gap-2" *ngFor="let opt of chargeModeOptions">
+                <p-radioButton
+                    [name]="'chargeMode'"
+                    [value]="opt.value"
+                    [(ngModel)]="chargeMode"
+                    (ngModelChange)="onChargeModeChange()"
+                    [inputId]="'mode_' + opt.value"
+                ></p-radioButton>
+                <label [for]="'mode_' + opt.value" class="cursor-pointer">
+                    <span class="font-semibold">{{ opt.value }}</span>
+                    <span class="text-color-secondary text-sm ml-1">— {{ opt.label }}</span>
+                </label>
+            </div>
+        </div>
+
+        <!-- Corridor Summary -->
+        <div *ngIf="sendingCountryId && receivingCountryId && paymentTypeId" class="surface-100 border-round p-3 mb-4">
+            <div class="flex flex-wrap gap-2 items-center">
+                <p-tag [value]="getSendingCountryName()" icon="pi pi-send" severity="info"></p-tag>
+                <i class="pi pi-arrow-right text-color-secondary"></i>
+                <p-tag [value]="getReceivingCountryName()" icon="pi pi-inbox" severity="success"></p-tag>
+                <span class="text-color-secondary mx-1">|</span>
+                <p-tag [value]="getPaymentTypeName()" icon="pi pi-credit-card" severity="warn"></p-tag>
+                <span *ngIf="currency" class="text-color-secondary mx-1">|</span>
+                <p-tag *ngIf="currency" [value]="'Currency: ' + currency" icon="pi pi-dollar" severity="secondary"></p-tag>
+            </div>
+        </div>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 3A: Flat Charge Setup     -->
+    <!-- ================================= -->
+    <div *ngIf="chargeMode === 'Flat' && slabs.length > 0" class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="font-semibold text-lg mb-4">
+            <i class="pi pi-equals mr-2"></i>Flat Charge Configuration
+        </div>
+        <p class="text-color-secondary mb-4">A single charge applies to all transaction amounts in this corridor.</p>
+
+        <p-fluid>
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Charge Type *</label>
+                    <p-select
+                        [options]="chargeTypeOptions"
+                        [(ngModel)]="slabs[0].chargeType"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select charge type"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">
+                        Charge Value * <span class="text-color-secondary text-sm">({{ slabs[0].chargeType === 'Percentage' ? '%' : currency }})</span>
+                    </label>
+                    <p-inputNumber
+                        [(ngModel)]="slabs[0].chargeValue"
+                        [minFractionDigits]="2"
+                        [maxFractionDigits]="4"
+                        [min]="0"
+                        placeholder="0.00"
+                    ></p-inputNumber>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label class="font-semibold">Currency</label>
+                    <input pInputText [value]="currency" disabled class="uppercase" />
+                </div>
+            </div>
+        </p-fluid>
+
+        <!-- Preview -->
+        <div *ngIf="slabs[0].chargeValue > 0" class="surface-100 border-round p-3 mt-4">
+            <span class="font-semibold text-color-secondary">Preview: </span>
+            <span *ngIf="slabs[0].chargeType === 'Flat'">
+                Flat charge of <strong>{{ slabs[0].chargeValue }} {{ currency }}</strong> on every transaction.
+            </span>
+            <span *ngIf="slabs[0].chargeType === 'Percentage'">
+                <strong>{{ slabs[0].chargeValue }}%</strong> of every transaction amount.
+            </span>
+        </div>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 3B: Range Charge Setup    -->
+    <!-- ================================= -->
+    <div *ngIf="chargeMode === 'Range'" class="card border-round-xl shadow-2 p-5 mb-4">
+        <div class="flex justify-between items-center mb-4">
+            <div>
+                <div class="font-semibold text-lg">
+                    <i class="pi pi-chart-bar mr-2"></i>Range / Slab Configuration
+                </div>
+                <p class="text-color-secondary mt-1 mb-0">Define amount ranges with different charges for each slab.</p>
+            </div>
+            <button pButton label="Add Slab" icon="pi pi-plus" severity="success" class="p-button-sm" (click)="addSlab()"></button>
+        </div>
+
+        <!-- Slab Table -->
+        <p-table [value]="slabs" [showGridlines]="true" responsiveLayout="scroll">
+            <ng-template pTemplate="header">
+                <tr>
+                    <th style="width: 3rem">#</th>
+                    <th>Min Amount ({{ currency }})</th>
+                    <th>Max Amount ({{ currency }})</th>
+                    <th>Charge Type</th>
+                    <th>Charge Value</th>
+                    <th>Currency</th>
+                    <th style="width: 4rem">Actions</th>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="body" let-slab let-i="rowIndex">
+                <tr>
+                    <td class="text-center font-semibold text-color-secondary">{{ i + 1 }}</td>
+                    <td>
+                        <p-inputNumber
+                            [(ngModel)]="slab.minAmount"
+                            [minFractionDigits]="2"
+                            [min]="0"
+                            placeholder="0.00"
+                            class="w-full"
+                        ></p-inputNumber>
+                    </td>
+                    <td>
+                        <p-inputNumber
+                            [(ngModel)]="slab.maxAmount"
+                            [minFractionDigits]="2"
+                            [min]="0"
+                            placeholder="0.00"
+                            class="w-full"
+                        ></p-inputNumber>
+                    </td>
+                    <td>
+                        <p-select
+                            [options]="chargeTypeOptions"
+                            [(ngModel)]="slab.chargeType"
+                            optionLabel="label"
+                            optionValue="value"
+                            placeholder="Type"
+                            class="w-full"
+                            [appendTo]="'body'"
+                        ></p-select>
+                    </td>
+                    <td>
+                        <p-inputNumber
+                            [(ngModel)]="slab.chargeValue"
+                            [minFractionDigits]="2"
+                            [maxFractionDigits]="4"
+                            [min]="0"
+                            placeholder="0.00"
+                            class="w-full"
+                        ></p-inputNumber>
+                    </td>
+                    <td>
+                        <input pInputText [value]="currency" disabled class="w-full uppercase" />
+                    </td>
+                    <td class="text-center">
+                        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm"
+                                (click)="removeSlab(i)" [disabled]="slabs.length <= 1"></button>
+                    </td>
+                </tr>
+            </ng-template>
+            <ng-template pTemplate="emptymessage">
+                <tr>
+                    <td colspan="7" class="text-center py-4 text-color-secondary">
+                        No slabs defined. Click "Add Slab" to begin.
+                    </td>
+                </tr>
+            </ng-template>
+        </p-table>
+
+        <!-- Slabs Summary -->
+        <div *ngIf="slabs.length > 0" class="surface-100 border-round p-3 mt-4">
+            <span class="font-semibold text-color-secondary">Summary: </span>
+            <span>{{ slabs.length }} slab(s) defined covering amounts from
+                <strong>{{ slabs[0].minAmount | number:'1.2-2' }} {{ currency }}</strong>
+                to
+                <strong>{{ slabs[slabs.length - 1].maxAmount | number:'1.2-2' }} {{ currency }}</strong>
+            </span>
+        </div>
+    </div>
+
+    <!-- ================================= -->
+    <!-- SECTION 4: Actions                -->
+    <!-- ================================= -->
+    <div class="flex justify-end gap-3 mt-4">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-outlined p-button-secondary" (click)="goBack()"></button>
+        <button pButton
+            [label]="editMode ? 'Update Setup' : 'Create Setup'"
+            icon="pi pi-check"
+            severity="success"
+            [loading]="submitting"
+            [disabled]="!isFormValid()"
+            (click)="saveSetup()">
+        </button>
+    </div>
+</div>

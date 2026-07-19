@@ -1,0 +1,113 @@
+<p-toast></p-toast>
+
+<p-fluid>
+  <div class="flex flex-col gap-8">
+    <div class="card flex flex-col gap-6">
+      <!-- Title -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (click)="cancel()" [pTooltip]="'common.back' | translate" tooltipPosition="bottom"></button>
+        <h2 class="text-2xl font-bold m-0">{{ (isEditMode ? 'inventory.editActivity' : 'inventory.addActivity') | translate }}</h2>
+      </div>
+
+      <!-- Page loading spinner -->
+      <div *ngIf="pageLoading" class="flex justify-center items-center py-16">
+        <p-progressSpinner strokeWidth="4" animationDuration=".8s" />
+      </div>
+
+      <form *ngIf="!pageLoading" (ngSubmit)="onSubmit()" #activityForm="ngForm">
+        <!-- Basic Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.basicInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.activityName' | translate }} *</label>
+              <input pInputText [(ngModel)]="activity.name" name="name" required placeholder="Activity name" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.activityType' | translate }} *</label>
+              <input pInputText [(ngModel)]="activity.activityType" name="activityType" required placeholder="e.g., Trekking, Rafting, Safari" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.location' | translate }} *</label>
+              <input pInputText [(ngModel)]="activity.location" name="location" required placeholder="Activity location" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.duration' | translate }} (hours) *</label>
+              <p-inputNumber [(ngModel)]="activity.durationHours" name="durationHours" [min]="1" [showButtons]="true" suffix=" hrs" class="w-full"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.difficulty' | translate }}</label>
+              <p-select [(ngModel)]="activity.difficultyLevel" [options]="difficultyLevels" optionLabel="label" optionValue="value" name="difficultyLevel" placeholder="Select difficulty" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.pricePerPerson' | translate }} (USD) *</label>
+              <p-inputNumber [(ngModel)]="activity.pricePerPerson" name="pricePerPerson" mode="currency" currency="USD" [min]="0" class="w-full"></p-inputNumber>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="my-4">
+
+        <!-- Participant Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.participantInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.minParticipants' | translate }}</label>
+              <p-inputNumber [(ngModel)]="activity.minParticipants" name="minParticipants" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.maxParticipants' | translate }}</label>
+              <p-inputNumber [(ngModel)]="activity.maxParticipants" name="maxParticipants" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+            </div>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="my-4">
+
+        <!-- Additional Details Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.additionalDetails' | translate }}</div>
+          
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.equipment' | translate }}</label>
+            <input pInputText [(ngModel)]="equipmentText" name="equipment" [placeholder]="'inventory.enterEquipmentCommaSeparated' | translate" class="w-full" />
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.description' | translate }}</label>
+            <textarea pInputTextarea [(ngModel)]="activity.description" name="description" rows="4" placeholder="Detailed description of the activity" class="w-full"></textarea>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.safetyInstructions' | translate }}</label>
+            <textarea pInputTextarea [(ngModel)]="activity.safetyInstructions" name="safetyInstructions" rows="4" placeholder="Safety instructions and guidelines" class="w-full"></textarea>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full">
+            <label>{{ 'inventory.images' | translate }}</label>
+            <input pInputText [(ngModel)]="imagesText" name="images" [placeholder]="'inventory.enterImagesCommaSeparated' | translate" class="w-full" />
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-2 mt-6">
+          <button pButton type="button" [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+          <button pButton type="submit" [label]="'common.save' | translate" [loading]="loading" icon="pi pi-check"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</p-fluid>

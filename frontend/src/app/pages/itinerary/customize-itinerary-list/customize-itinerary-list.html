@@ -1,0 +1,70 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-6">
+        <div>
+            <h2 class="text-2xl font-bold m-0">Customize Itinerary</h2>
+            <p class="text-gray-500 mt-1 mb-0">Select an itinerary to customize days, merge activities, and adjust pricing</p>
+        </div>
+        <p-button label="New Itinerary" icon="pi pi-plus" routerLink="/add-itinerary" severity="success"></p-button>
+    </div>
+
+    <!-- Loading -->
+    @if (loading) {
+        <div class="flex justify-center items-center py-12">
+            <p-progressSpinner strokeWidth="4" animationDuration="1s"></p-progressSpinner>
+        </div>
+    }
+
+    <!-- Itinerary Cards Grid -->
+    @if (!loading && itineraries.length > 0) {
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            @for (itinerary of itineraries; track itinerary.id) {
+                <div class="itinerary-card">
+                    <div class="itinerary-card-header">
+                        <div class="flex justify-between items-start">
+                            <h3 class="text-lg font-semibold m-0 line-clamp-1">{{ itinerary.title }}</h3>
+                            <p-tag [value]="itinerary.difficultyLevel || 'N/A'"
+                                   [severity]="difficultyTag(itinerary.difficultyLevel)"
+                                   [rounded]="true"></p-tag>
+                        </div>
+                    </div>
+                    <div class="itinerary-card-body">
+                        <p class="text-sm text-gray-500 line-clamp-2 m-0">
+                            {{ itinerary.description || 'No description available' }}
+                        </p>
+                        <div class="flex gap-4 mt-3">
+                            <div class="flex items-center gap-1 text-sm">
+                                <i class="pi pi-calendar text-primary"></i>
+                                <span>{{ itinerary.durationDays }} Days</span>
+                            </div>
+                            @if (itinerary.overallPrice) {
+                                <div class="flex items-center gap-1 text-sm">
+                                    <i class="pi pi-indian-rupee text-primary" style="font-size: 0.75rem;"></i>
+                                    <span>Rs. {{ itinerary.overallPrice }}</span>
+                                </div>
+                            }
+                        </div>
+                    </div>
+                    <div class="itinerary-card-footer">
+                        <p-button label="View" icon="pi pi-eye" [text]="true" size="small"
+                                  (click)="viewDetails(itinerary)"></p-button>
+                        <p-button label="Customize" icon="pi pi-sliders-h" severity="success" size="small"
+                                  (click)="customizeItinerary(itinerary)"></p-button>
+                    </div>
+                </div>
+            }
+        </div>
+    }
+
+    <!-- Empty State -->
+    @if (!loading && itineraries.length === 0) {
+        <div class="flex flex-col items-center justify-center py-16">
+            <i class="pi pi-map text-6xl text-gray-300 mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-500 mb-2">No Itineraries Found</h3>
+            <p class="text-gray-400 mb-4">Create your first itinerary to get started</p>
+            <p-button label="Create Itinerary" icon="pi pi-plus" routerLink="/add-itinerary"></p-button>
+        </div>
+    }
+</div>

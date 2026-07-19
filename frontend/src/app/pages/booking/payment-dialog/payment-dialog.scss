@@ -1,0 +1,33 @@
+.pay-content{display:flex;flex-direction:column;gap:1.25rem}
+.pay-summary{background:var(--surface-hover);border-radius:10px;padding:1rem;display:flex;flex-direction:column;gap:.5rem}
+.pay-summary-row{display:flex;justify-content:space-between;align-items:center;font-size:.9rem;color:var(--text-color-secondary)}
+.pay-ref{font-family:monospace;font-weight:600;color:var(--primary-color)}
+.discount-val{color:var(--p-red-500);font-weight:600}
+.pay-divider{border-top:1px dashed var(--surface-border);margin:.25rem 0}
+.pay-total-row{font-size:1.1rem;font-weight:700;color:var(--text-color)}
+.pay-total{color:var(--primary-color);font-size:1.2rem}
+.pay-methods-title{font-size:.95rem;font-weight:600;color:var(--text-color);margin:0 0 .75rem}
+.pay-method-cards{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.pay-method-card{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:1.25rem 1rem;border:2px solid var(--surface-border);border-radius:12px;cursor:pointer;transition:all .2s;text-align:center}
+.pay-method-card:hover{border-color:var(--primary-color);background:color-mix(in srgb, var(--primary-color) 8%, var(--surface-card))}
+.pay-method-card.selected{border-color:var(--primary-color);background:color-mix(in srgb, var(--primary-color) 12%, var(--surface-card))}
+.pay-method-card i{font-size:2rem;color:var(--primary-color)}
+.pay-method-card span{font-weight:600;font-size:.95rem;color:var(--text-color)}
+.pay-method-card small{font-size:.75rem;color:var(--text-color-secondary)}
+.qr-preview{display:flex;flex-direction:column;align-items:center;gap:.75rem}
+.qr-frame{padding:1rem;background:var(--surface-card);border:2px solid var(--surface-border);border-radius:12px;display:inline-flex}
+.qr-account-info{text-align:center;font-size:.85rem;color:var(--text-color-secondary);line-height:1.5}
+.qr-account-info p{margin:.15rem 0}
+.cash-info{display:flex;align-items:flex-start;gap:.75rem;padding:1rem;background:var(--p-blue-50);border-radius:10px;border:1px solid var(--p-blue-200)}
+.cash-info i{font-size:1.5rem;color:var(--p-blue-500);margin-top:.15rem}
+.cash-info p{margin:0;font-size:.9rem;color:var(--text-color);line-height:1.5}
+.pay-actions{display:flex;justify-content:flex-end;gap:.5rem;padding-top:.5rem}
+.pay-processing{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:3rem 1rem;text-align:center;gap:.75rem}
+.pay-processing h3{margin:0;color:var(--text-color)}
+.pay-processing p{margin:0;color:var(--text-color-secondary);font-size:.9rem}
+.pay-success{display:flex;flex-direction:column;align-items:center;padding:2rem 1rem;text-align:center;gap:.75rem}
+.success-icon{width:5rem;height:5rem;border-radius:50%;background:var(--p-green-50);display:flex;align-items:center;justify-content:center}
+.success-icon i{font-size:3rem;color:var(--p-green-500)}
+.pay-success h3{margin:0;color:var(--text-color)}
+.pay-success p{margin:0;color:var(--text-color-secondary);font-size:.9rem}
+.success-ref{font-family:monospace;font-weight:600;color:var(--primary-color)}

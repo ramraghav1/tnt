@@ -1,0 +1,322 @@
+﻿using System;
+
+namespace Repository.DataModels.TourAndTravels
+{
+    public class BookingDTO
+    {
+        // ===========================
+        // CREATE BOOKING (from Template or Instance)
+        // ===========================
+        public class CreateBookingRequest
+        {
+            public long ItineraryId { get; set; }
+            public long? SourceInstanceId { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public List<TravelerRequest> Travelers { get; set; } = new();
+            public string? SpecialRequests { get; set; }
+            public decimal TotalAmount { get; set; }
+        }
+
+        public class TravelerRequest
+        {
+            public string FullName { get; set; } = string.Empty;
+            public string? ContactNumber { get; set; }
+            public string? Email { get; set; }
+            public string? Nationality { get; set; }
+            public int Adults { get; set; } = 1;
+            public int Children { get; set; } = 0;
+            public int Seniors { get; set; } = 0;
+        }
+
+        // ===========================
+        // Customize instance day
+        // ===========================
+        public class CustomizeDayRequest
+        {
+            public long InstanceDayId { get; set; }
+            public string? Title { get; set; }
+            public string? Location { get; set; }
+            public string? Accommodation { get; set; }
+            public string? Transport { get; set; }
+            public bool? BreakfastIncluded { get; set; }
+            public bool? LunchIncluded { get; set; }
+            public bool? DinnerIncluded { get; set; }
+            public List<string>? Activities { get; set; }
+        }
+
+        // ===========================
+        // Update Booking (edit existing instance)
+        // ===========================
+        public class UpdateBookingRequest
+        {
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public string? SpecialRequests { get; set; }
+            public decimal TotalAmount { get; set; }
+            public List<TravelerRequest> Travelers { get; set; } = new();
+            public List<UpdateBookingDayRequest> Days { get; set; } = new();
+        }
+
+        public class UpdateBookingDayRequest
+        {
+            public long Id { get; set; }
+            public string? Title { get; set; }
+            public string? Location { get; set; }
+            public string? Accommodation { get; set; }
+            public string? Transport { get; set; }
+            public bool BreakfastIncluded { get; set; }
+            public bool LunchIncluded { get; set; }
+            public bool DinnerIncluded { get; set; }
+            public List<string> Activities { get; set; } = new();
+        }
+
+        // ===========================
+        // Booking Response (summary)
+        // ===========================
+        public class BookingResponse
+        {
+            public long InstanceId { get; set; }
+            public long TemplateId { get; set; }
+            public long? SourceInstanceId { get; set; }
+            public string? BookingReference { get; set; }
+            public string Status { get; set; } = "Draft";
+            public bool IsCustomized { get; set; }
+            public decimal TotalAmount { get; set; }
+            public decimal AmountPaid { get; set; }
+            public decimal BalanceAmount { get; set; }
+            public string PaymentStatus { get; set; } = "Unpaid";
+            public bool TravelerApproved { get; set; }
+            public bool AdminApproved { get; set; }
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
+            public DateTime CreatedAt { get; set; }
+        }
+
+        // ===========================
+        // Booking Detail Response
+        // ===========================
+        public class BookingDetailResponse : BookingResponse
+        {
+            public string TemplateTitle { get; set; } = string.Empty;
+            public string? SpecialRequests { get; set; }
+            public List<BookingDayResponse> Days { get; set; } = new();
+            public List<TravelerResponse> Travelers { get; set; } = new();
+            public List<PaymentResponse> Payments { get; set; } = new();
+        }
+
+        // ===========================
+        // Booking Day Response
+        // ===========================
+        public class BookingDayResponse
+        {
+            public long Id { get; set; }
+            public int DayNumber { get; set; }
+            public DateTime? Date { get; set; }
+            public string? Title { get; set; }
+            public string? Location { get; set; }
+            public string? Accommodation { get; set; }
+            public string? Transport { get; set; }
+            public bool BreakfastIncluded { get; set; }
+            public bool LunchIncluded { get; set; }
+            public bool DinnerIncluded { get; set; }
+            public List<string> Activities { get; set; } = new();
+        }
+
+        // ===========================
+        // Traveler Response
+        // ===========================
+        public class TravelerResponse
+        {
+            public long Id { get; set; }
+            public string FullName { get; set; } = string.Empty;
+            public string? ContactNumber { get; set; }
+            public string? Email { get; set; }
+            public string? Nationality { get; set; }
+            public int Adults { get; set; }
+            public int Children { get; set; }
+            public int Seniors { get; set; }
+        }
+
+        // ===========================
+        // Payment
+        // ===========================
+        public class AddPaymentRequest
+        {
+            public decimal Amount { get; set; }
+            public string Currency { get; set; } = "USD";
+            public string PaymentMethod { get; set; } = "Card";
+            public string? TransactionReference { get; set; }
+        }
+
+        public class PaymentResponse
+        {
+            public long PaymentId { get; set; }
+            public decimal Amount { get; set; }
+            public string Currency { get; set; } = "USD";
+            public string PaymentMethod { get; set; } = "Card";
+            public DateTime PaymentDate { get; set; }
+            public string Status { get; set; } = "Success";
+            public string? TransactionReference { get; set; }
+        }
+
+        // ===========================
+        // Approval
+        // ===========================
+        public class ApproveBookingRequest
+        {
+            public string ApprovedBy { get; set; } = string.Empty;
+            public bool Approved { get; set; }
+            public string? Remarks { get; set; }
+        }
+
+        // ===========================
+        // Booking List Item
+        // ===========================
+        public class BookingListItem
+        {
+            public long InstanceId { get; set; }
+            public string? BookingReference { get; set; }
+            public string TemplateTitle { get; set; } = string.Empty;
+            public string Status { get; set; } = "Draft";
+            public DateTime? StartDate { get; set; }
+            public DateTime? EndDate { get; set; }
+            public decimal TotalAmount { get; set; }
+            public string PaymentStatus { get; set; } = "Unpaid";
+            public DateTime CreatedAt { get; set; }
+            public string? PrimaryTravelerName { get; set; }
+            public string? PrimaryTravelerContact { get; set; }
+            public string? PrimaryTravelerEmail { get; set; }
+        }
+
+        // ===========================
+        // Dashboard Stats
+        // ===========================
+        public class DashboardStatsDTO
+        {
+            public int TotalBookings { get; set; }
+            public int Confirmed { get; set; }
+            public int Pending { get; set; }
+            public int Draft { get; set; }
+            public int Cancelled { get; set; }
+            public decimal TotalRevenue { get; set; }
+            public decimal CollectedRevenue { get; set; }
+            public int TotalTravelers { get; set; }
+            public int TotalItineraries { get; set; }
+            public List<MonthlyBookingCountDTO> MonthlyBookings { get; set; } = new();
+            public List<RevenueByMonthDTO> MonthlyRevenue { get; set; } = new();
+            public List<TopItineraryDTO> TopItineraries { get; set; } = new();
+            public List<RecentBookingDTO> RecentBookings { get; set; } = new();
+            public List<StatusCountDTO> PaymentStatusBreakdown { get; set; } = new();
+        }
+
+        public class MonthlyBookingCountDTO
+        {
+            public string Month { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        public class RevenueByMonthDTO
+        {
+            public string Month { get; set; } = string.Empty;
+            public decimal Amount { get; set; }
+        }
+
+        public class TopItineraryDTO
+        {
+            public string Title { get; set; } = string.Empty;
+            public int BookingCount { get; set; }
+        }
+
+        public class RecentBookingDTO
+        {
+            public long InstanceId { get; set; }
+            public string? BookingReference { get; set; }
+            public string TemplateTitle { get; set; } = string.Empty;
+            public string Status { get; set; } = string.Empty;
+            public string PaymentStatus { get; set; } = string.Empty;
+            public decimal TotalAmount { get; set; }
+            public DateTime CreatedAt { get; set; }
+        }
+
+        public class StatusCountDTO
+        {
+            public string Label { get; set; } = string.Empty;
+            public int Count { get; set; }
+        }
+
+        // ===========================
+        // Booking Inventory Assignment
+        // ===========================
+        public class AssignInventoryRequest
+        {
+            public string InventoryType { get; set; } = string.Empty;
+            public long InventoryId { get; set; }
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public int Quantity { get; set; } = 1;
+            public decimal Price { get; set; }
+            public string? Notes { get; set; }
+        }
+
+        public class BookingInventoryItemDTO
+        {
+            public long Id { get; set; }
+            public string InventoryType { get; set; } = string.Empty;
+            public long InventoryId { get; set; }
+            public string InventoryName { get; set; } = string.Empty;
+            public DateTime StartDate { get; set; }
+            public DateTime EndDate { get; set; }
+            public int Quantity { get; set; }
+            public decimal Price { get; set; }
+            public string? Notes { get; set; }
+            public DateTime CreatedAt { get; set; }
+        }
+
+        // ===========================
+        // Operations Stats DTO
+        // ===========================
+        public class OperationsStatsDTO
+        {
+            public int TodayArrivals { get; set; }
+            public int ActiveTreks { get; set; }
+            public int PendingPayments { get; set; }
+            public int NewInquiries { get; set; }
+            public decimal RevenueToday { get; set; }
+            public int VehiclesAssigned { get; set; }
+            public List<OperationItemDTO> TodayOperations { get; set; } = new();
+            public List<UpcomingTrekDTO> UpcomingTreks { get; set; } = new();
+            public List<DashboardAlertDTO> Alerts { get; set; } = new();
+        }
+
+        public class OperationItemDTO
+        {
+            public string Type { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;
+            public string? Details { get; set; }
+            public string? Time { get; set; }
+            public string Icon { get; set; } = string.Empty;
+        }
+
+        public class UpcomingTrekDTO
+        {
+            public long DepartureId { get; set; }
+            public string ItineraryTitle { get; set; } = string.Empty;
+            public DateTime DepartureDate { get; set; }
+            public int BookedCount { get; set; }
+            public int Capacity { get; set; }
+            public string? GuideName { get; set; }
+            public string Status { get; set; } = string.Empty;
+        }
+
+        public class DashboardAlertDTO
+        {
+            public string Severity { get; set; } = "warn";
+            public string Icon { get; set; } = string.Empty;
+            public string Title { get; set; } = string.Empty;
+            public string? Detail { get; set; }
+            public string Type { get; set; } = string.Empty;
+        }
+    }
+}
+

@@ -1,0 +1,26 @@
+:host ::ng-deep {
+    .p-inputnumber {
+        width: 100%;
+        
+        input {
+            width: 100%;
+        }
+    }
+
+    .p-select {
+        width: 100%;
+    }
+
+    .p-fileupload {
+        .p-button {
+            width: 100%;
+        }
+    }
+
+    // Ensure forms are properly styled
+    form {
+        .w-full {
+            width: 100%;
+        }
+    }
+}

@@ -1,0 +1,755 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <!-- Steps Header -->
+    <p-steps [model]="steps" [activeIndex]="step - 1" [readonly]="true" styleClass="mb-6"></p-steps>
+
+    <!-- ============================================ -->
+    <!-- Step 1: Transaction Details                  -->
+    <!-- ============================================ -->
+    <div *ngIf="step === 1">
+        <p-fluid>
+            <div class="font-semibold text-xl mb-4 flex items-center gap-2">
+                <i class="pi pi-send text-primary"></i>
+                Transaction Details
+            </div>
+
+            <!-- Row 1: Payment Type (PRIMARY CHOICE) -->
+            <div class="flex flex-col md:flex-row gap-4 mb-4">
+                <div class="flex flex-col gap-2 w-full md:w-1/2">
+                    <label class="font-semibold">Payment Type *</label>
+                    <p-select [(ngModel)]="selectedPaymentType" [options]="paymentTypes" optionLabel="name"
+                        placeholder="Select Payment Type" [appendTo]="'body'"
+                        (ngModelChange)="onPaymentTypeChange()"></p-select>
+                </div>
+            </div>
+
+            <!-- Payout Details Section (appears after payment type is chosen) -->
+            <div *ngIf="selectedPaymentType" class="mb-4">
+                <!-- Cash Pay Mode: show "Anywhere in Nepal" badge -->
+                <div *ngIf="payoutMode === 'cash'" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                    <div class="flex items-center gap-3">
+                        <i class="pi pi-map-marker text-green-600 text-2xl"></i>
+                        <div>
+                            <div class="font-semibold text-green-800 text-lg">Payout Location</div>
+                            <div class="text-green-700" *ngIf="!loadingPayout">{{ cashPayoutLabel }}</div>
+                            <div *ngIf="loadingPayout" class="flex items-center gap-2 text-green-600">
+                                <i class="pi pi-spin pi-spinner"></i> Loading payout details...
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Bank Transfer Mode: show bank list + branch -->
+                <div *ngIf="payoutMode === 'bank'">
+                    <div class="font-semibold text-sm text-color-secondary mb-2 flex items-center gap-2">
+                        <i class="pi pi-building text-blue-500"></i> Payout Bank Details
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Payout Bank *</label>
+                            <p-select [(ngModel)]="selectedPayoutAgent" [options]="payoutAgentOptions" optionLabel="name"
+                                placeholder="Select Bank" [appendTo]="'body'" [filter]="true"
+                                (ngModelChange)="onPayoutAgentChange()"></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Payout Branch</label>
+                            <p-select [(ngModel)]="selectedPayoutBranch" [options]="payoutBranches" optionLabel="branchName"
+                                placeholder="Select Branch" [appendTo]="'body'" [filter]="true"
+                                [disabled]="!selectedPayoutAgent"></p-select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Wallet Mode: show wallet provider list + branch -->
+                <div *ngIf="payoutMode === 'wallet'">
+                    <div class="font-semibold text-sm text-color-secondary mb-2 flex items-center gap-2">
+                        <i class="pi pi-wallet text-purple-500"></i> Wallet Details
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Wallet Provider *</label>
+                            <p-select [(ngModel)]="selectedPayoutAgent" [options]="payoutAgentOptions" optionLabel="name"
+                                placeholder="Select Wallet Provider" [appendTo]="'body'" [filter]="true"
+                                (ngModelChange)="onPayoutAgentChange()"></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Branch (Optional)</label>
+                            <p-select [(ngModel)]="selectedPayoutBranch" [options]="payoutBranches" optionLabel="branchName"
+                                placeholder="Select Branch" [appendTo]="'body'" [filter]="true"
+                                [disabled]="!selectedPayoutAgent"></p-select>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Generic Agent Mode: show agent + branch -->
+                <div *ngIf="payoutMode === 'agent'">
+                    <div class="font-semibold text-sm text-color-secondary mb-2 flex items-center gap-2">
+                        <i class="pi pi-users text-orange-500"></i> Payout Agent Details
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Payout Agent *</label>
+                            <p-select [(ngModel)]="selectedPayoutAgent" [options]="payoutAgentOptions" optionLabel="name"
+                                placeholder="Select Payout Agent" [appendTo]="'body'" [filter]="true"
+                                (ngModelChange)="onPayoutAgentChange()"></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Payout Branch</label>
+                            <p-select [(ngModel)]="selectedPayoutBranch" [options]="payoutBranches" optionLabel="branchName"
+                                placeholder="Select Branch" [appendTo]="'body'" [filter]="true"
+                                [disabled]="!selectedPayoutAgent"></p-select>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Sending Agent Section -->
+            <div *ngIf="selectedPaymentType" class="mb-4">
+                <div class="font-semibold text-sm text-color-secondary mb-2 flex items-center gap-2">
+                    <i class="pi pi-user text-primary"></i> Sending Agent & Branch
+                </div>
+                <div class="flex flex-col md:flex-row gap-4">
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Sender Agent *</label>
+                        <p-select [(ngModel)]="selectedSenderAgent" [options]="agents" optionLabel="name"
+                            placeholder="Select Sender Agent" [appendTo]="'body'" [filter]="true"
+                            (ngModelChange)="onSenderAgentChange()"></p-select>
+                    </div>
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Sender Branch *</label>
+                        <p-select [(ngModel)]="selectedSenderBranch" [options]="senderBranches" optionLabel="branchName"
+                            placeholder="Select Branch" [appendTo]="'body'" [filter]="true"
+                            [disabled]="!selectedSenderAgent"></p-select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Location Categories & Agent (shown after payment type) -->
+            <div *ngIf="selectedPaymentType">
+                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">From Location Category *</label>
+                        <p-select [(ngModel)]="selectedFromCategory" [options]="locationCategories" optionLabel="displayName"
+                            placeholder="Select From Category" [appendTo]="'body'"
+                            (ngModelChange)="onCorridorChange()"></p-select>
+                    </div>
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">To Location Category *</label>
+                        <p-select [(ngModel)]="selectedToCategory" [options]="locationCategories" optionLabel="displayName"
+                            placeholder="Select To Category" [appendTo]="'body'"
+                            (ngModelChange)="onCorridorChange()"></p-select>
+                    </div>
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Agent (Optional)</label>
+                        <p-select [(ngModel)]="selectedAgent" [options]="agents" optionLabel="name"
+                            placeholder="Select Agent" [showClear]="true" [appendTo]="'body'"
+                            (ngModelChange)="onCorridorChange()"></p-select>
+                    </div>
+                </div>
+
+                <!-- Amounts -->
+                <div class="flex flex-col md:flex-row gap-4 mb-4">
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Send Amount *</label>
+                        <input pInputText type="number" [(ngModel)]="transaction.transferAmount"
+                            (ngModelChange)="onAmountChange()" placeholder="Enter amount to send" min="0" />
+                    </div>
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Service Fee</label>
+                        <div class="relative">
+                            <input pInputText type="number" [ngModel]="transaction.serviceFee" readonly
+                                placeholder="Auto-calculated" class="bg-gray-50" />
+                            <i *ngIf="loadingFee" class="pi pi-spin pi-spinner absolute right-3 top-1/2 -translate-y-1/2 text-primary"></i>
+                        </div>
+                    </div>
+                    <div class="flex flex-col gap-2 w-full">
+                        <label class="font-semibold">Total Collected</label>
+                        <input pInputText type="number" [ngModel]="transaction.collectedAmount" readonly
+                            placeholder="Send Amount + Fee" class="bg-gray-50 font-bold" />
+                    </div>
+                </div>
+            </div>
+
+            <!-- FX Rate Info Card -->
+            <div *ngIf="fxInfo" class="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-4">
+                <div class="font-semibold text-blue-800 mb-2 flex items-center gap-2">
+                    <i class="pi pi-chart-line text-blue-500"></i>
+                    Exchange Rate Information
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-color-secondary">Rate:</span>
+                        <span class="ml-1 font-semibold">{{ fxInfo.customerRate | number:'1.2-4' }}</span>
+                    </div>
+                    <div>
+                        <span class="text-color-secondary">Send:</span>
+                        <span class="ml-1 font-semibold">{{ fxInfo.sendAmount | number:'1.2-2' }} {{ fxInfo.sendingCurrency }}</span>
+                    </div>
+                    <div>
+                        <span class="text-color-secondary">Receive:</span>
+                        <span class="ml-1 font-semibold">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</span>
+                    </div>
+                    <div *ngIf="fxInfo.settlementRate">
+                        <span class="text-color-secondary">Settlement:</span>
+                        <span class="ml-1 font-semibold">{{ fxInfo.settlementRate | number:'1.2-4' }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Domestic Service Fee Info Card -->
+            <div *ngIf="domesticFeeInfo" class="bg-green-50 border border-green-200 rounded-lg p-4 mb-4">
+                <div class="font-semibold text-green-800 mb-2 flex items-center gap-2">
+                    <i class="pi pi-money-bill text-green-500"></i>
+                    Domestic Service Charge
+                    <i *ngIf="loadingDomesticFee" class="pi pi-spin pi-spinner text-green-500"></i>
+                </div>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
+                    <div>
+                        <span class="text-color-secondary">Send Amount:</span>
+                        <span class="ml-1 font-semibold">{{ domesticFeeInfo.sendAmount | number:'1.2-2' }} {{ domesticFeeInfo.currency }}</span>
+                    </div>
+                    <div>
+                        <span class="text-color-secondary">Service Charge:</span>
+                        <span class="ml-1 font-semibold">{{ domesticFeeInfo.serviceCharge | number:'1.2-2' }} {{ domesticFeeInfo.currency }}</span>
+                    </div>
+                    <div>
+                        <span class="text-color-secondary">Charge Type:</span>
+                        <span class="ml-1 font-semibold">{{ domesticFeeInfo.chargeType }} ({{ domesticFeeInfo.chargeValue }})</span>
+                    </div>
+                    <div>
+                        <span class="text-color-secondary">Total Deducted:</span>
+                        <span class="ml-1 font-semibold text-green-700">{{ domesticFeeInfo.totalDeducted | number:'1.2-2' }} {{ domesticFeeInfo.currency }}</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex justify-end mt-4">
+                <button pButton label="Next" icon="pi pi-arrow-right" iconPos="right" (click)="next()"
+                    [disabled]="!canProceedStep1"></button>
+            </div>
+        </p-fluid>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- Step 2: Sender Information                   -->
+    <!-- ============================================ -->
+    <div *ngIf="step === 2">
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Sender Form -->
+            <div class="flex-1">
+                <p-fluid>
+                    <div class="font-semibold text-xl mb-4 flex items-center gap-2">
+                        <i class="pi pi-user text-green-500"></i>
+                        Sender Information
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Full Name *</label>
+                            <input pInputText [(ngModel)]="sender.name" placeholder="Sender full name" />
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Mobile *</label>
+                            <input pInputText [(ngModel)]="sender.mobile" placeholder="Sender mobile" />
+                        </div>
+                    </div>
+
+                    <!-- Address Dropdowns (Province → District → Local Level → Ward) -->
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Province / State</label>
+                            <p-select [(ngModel)]="sender.selectedProvince" [options]="senderProvinces" optionLabel="name"
+                                placeholder="Select Province" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                (ngModelChange)="onProvinceChange('sender')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">District</label>
+                            <p-select [(ngModel)]="sender.selectedDistrict" [options]="senderDistricts" optionLabel="name"
+                                placeholder="Select District" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                [disabled]="!senderDistricts.length"
+                                (ngModelChange)="onDistrictChange('sender')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Local Level</label>
+                            <p-select [(ngModel)]="sender.selectedLocalLevel" [options]="senderLocalLevels" optionLabel="name"
+                                placeholder="Select Local Level" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                [disabled]="!senderLocalLevels.length"
+                                (ngModelChange)="onLocalLevelChange('sender')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full" style="max-width: 120px;">
+                            <label class="font-semibold">Ward No</label>
+                            <input pInputText [(ngModel)]="sender.wardNo" placeholder="Ward"
+                                (ngModelChange)="onWardChange('sender')" />
+                        </div>
+                    </div>
+
+                    <!-- Computed Address (read-only) -->
+                    <div class="flex flex-col gap-2 mb-4">
+                        <label class="font-semibold">Full Address</label>
+                        <input pInputText [ngModel]="sender.address" readonly class="bg-gray-50" placeholder="Auto-generated from selections above" />
+                    </div>
+
+                    <div class="mb-4">
+                        <p-checkbox [(ngModel)]="sender.showOther" [binary]="true" label="Additional Information"></p-checkbox>
+                    </div>
+
+                    <div *ngIf="sender.showOther" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">ID Type</label>
+                            <input pInputText [(ngModel)]="sender.idType" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">ID Number</label>
+                            <input pInputText [(ngModel)]="sender.idNumber" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">Issue Date</label>
+                            <input pInputText type="date" [(ngModel)]="sender.issueDate" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">Expiry Date</label>
+                            <input pInputText type="date" [(ngModel)]="sender.expiryDate" />
+                        </div>
+                    </div>
+                </p-fluid>
+            </div>
+
+            <!-- Sidebar: Transaction Summary -->
+            <div class="w-full lg:w-80 flex flex-col gap-4">
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                        <i class="pi pi-credit-card text-blue-500"></i>
+                        Transaction Summary
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-color-secondary">Payment:</span><span class="font-semibold">{{ paymentTypeName }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">Payout:</span><span class="font-semibold">{{ payoutSummaryLabel }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">From:</span><span class="font-semibold">{{ fromCategoryName }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">To:</span><span class="font-semibold">{{ toCategoryName }}</span></div>
+                        <hr class="my-2">
+                        <div class="flex justify-between"><span class="text-color-secondary">Send Amount:</span><span class="font-semibold">{{ transaction.transferAmount | number:'1.2-2' }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">Service Fee:</span><span class="font-semibold">{{ transaction.serviceFee | number:'1.2-2' }}</span></div>
+                        <div class="flex justify-between border-t pt-2 mt-2"><span class="font-bold">Total:</span><span class="font-bold text-primary">{{ transaction.collectedAmount | number:'1.2-2' }}</span></div>
+                        <div *ngIf="fxInfo" class="flex justify-between border-t pt-2 mt-2">
+                            <span class="text-color-secondary">Receiver Gets:</span>
+                            <span class="font-bold text-green-600">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-between mt-6">
+            <button pButton label="Back" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prev()"></button>
+            <button pButton label="Next" icon="pi pi-arrow-right" iconPos="right" (click)="next()"
+                [disabled]="!sender.name || !sender.address || !sender.mobile"></button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- Step 3: Receiver Information                 -->
+    <!-- ============================================ -->
+    <div *ngIf="step === 3">
+        <div class="flex flex-col lg:flex-row gap-6">
+            <!-- Receiver Form -->
+            <div class="flex-1">
+                <p-fluid>
+                    <div class="font-semibold text-xl mb-4 flex items-center gap-2">
+                        <i class="pi pi-user-plus text-yellow-500"></i>
+                        Receiver Information
+                    </div>
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Full Name *</label>
+                            <input pInputText [(ngModel)]="receiver.name" placeholder="Receiver full name" />
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Mobile *</label>
+                            <input pInputText [(ngModel)]="receiver.mobile" placeholder="Receiver mobile" />
+                        </div>
+                    </div>
+
+                    <!-- Address Dropdowns (Province → District → Local Level → Ward) -->
+                    <div class="flex flex-col md:flex-row gap-4 mb-4">
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Province / State</label>
+                            <p-select [(ngModel)]="receiver.selectedProvince" [options]="receiverProvinces" optionLabel="name"
+                                placeholder="Select Province" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                (ngModelChange)="onProvinceChange('receiver')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">District</label>
+                            <p-select [(ngModel)]="receiver.selectedDistrict" [options]="receiverDistricts" optionLabel="name"
+                                placeholder="Select District" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                [disabled]="!receiverDistricts.length"
+                                (ngModelChange)="onDistrictChange('receiver')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full">
+                            <label class="font-semibold">Local Level</label>
+                            <p-select [(ngModel)]="receiver.selectedLocalLevel" [options]="receiverLocalLevels" optionLabel="name"
+                                placeholder="Select Local Level" [filter]="true" filterBy="name" [appendTo]="'body'"
+                                [disabled]="!receiverLocalLevels.length"
+                                (ngModelChange)="onLocalLevelChange('receiver')"
+                                ></p-select>
+                        </div>
+                        <div class="flex flex-col gap-2 w-full" style="max-width: 120px;">
+                            <label class="font-semibold">Ward No</label>
+                            <input pInputText [(ngModel)]="receiver.wardNo" placeholder="Ward"
+                                (ngModelChange)="onWardChange('receiver')" />
+                        </div>
+                    </div>
+
+                    <!-- Computed Address (read-only) -->
+                    <div class="flex flex-col gap-2 mb-4">
+                        <label class="font-semibold">Full Address</label>
+                        <input pInputText [ngModel]="receiver.address" readonly class="bg-gray-50" placeholder="Auto-generated from selections above" />
+                    </div>
+
+                    <div class="mb-4">
+                        <p-checkbox [(ngModel)]="receiver.showOther" [binary]="true" label="Additional Information"></p-checkbox>
+                    </div>
+
+                    <div *ngIf="receiver.showOther" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-4">
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">ID Type</label>
+                            <input pInputText [(ngModel)]="receiver.idType" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">ID Number</label>
+                            <input pInputText [(ngModel)]="receiver.idNumber" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">Issue Date</label>
+                            <input pInputText type="date" [(ngModel)]="receiver.issueDate" />
+                        </div>
+                        <div class="flex flex-col gap-2">
+                            <label class="font-semibold">Expiry Date</label>
+                            <input pInputText type="date" [(ngModel)]="receiver.expiryDate" />
+                        </div>
+                    </div>
+                </p-fluid>
+            </div>
+
+            <!-- Sidebar: Transaction + Sender Summary -->
+            <div class="w-full lg:w-80 flex flex-col gap-4">
+                <!-- Transaction Summary -->
+                <div class="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                    <div class="font-bold text-blue-800 mb-3 flex items-center gap-2">
+                        <i class="pi pi-credit-card text-blue-500"></i>
+                        Transaction Summary
+                    </div>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span class="text-color-secondary">Payment:</span><span class="font-semibold">{{ paymentTypeName }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">Payout:</span><span class="font-semibold">{{ payoutSummaryLabel }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">From:</span><span class="font-semibold">{{ fromCategoryName }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">To:</span><span class="font-semibold">{{ toCategoryName }}</span></div>
+                        <hr class="my-2">
+                        <div class="flex justify-between"><span class="text-color-secondary">Send Amount:</span><span class="font-semibold">{{ transaction.transferAmount | number:'1.2-2' }}</span></div>
+                        <div class="flex justify-between"><span class="text-color-secondary">Service Fee:</span><span class="font-semibold">{{ transaction.serviceFee | number:'1.2-2' }}</span></div>
+                        <div class="flex justify-between border-t pt-2 mt-2"><span class="font-bold">Total:</span><span class="font-bold text-primary">{{ transaction.collectedAmount | number:'1.2-2' }}</span></div>
+                        <div *ngIf="fxInfo" class="flex justify-between border-t pt-2 mt-2">
+                            <span class="text-color-secondary">Receiver Gets:</span>
+                            <span class="font-bold text-green-600">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</span>
+                        </div>
+                    </div>
+                </div>
+                <!-- Sender Summary -->
+                <div class="bg-green-50 border border-green-200 rounded-lg p-4">
+                    <div class="font-bold text-green-800 mb-3 flex items-center gap-2">
+                        <i class="pi pi-user text-green-500"></i>
+                        Sender Info
+                    </div>
+                    <div class="space-y-1 text-sm">
+                        <div><span class="text-color-secondary">Name:</span> <span class="font-semibold ml-1">{{ sender.name || '-' }}</span></div>
+                        <div><span class="text-color-secondary">Address:</span> <span class="font-semibold ml-1">{{ sender.address || '-' }}</span></div>
+                        <div><span class="text-color-secondary">Mobile:</span> <span class="font-semibold ml-1">{{ sender.mobile || '-' }}</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="flex justify-between mt-6">
+            <button pButton label="Back" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prev()"></button>
+            <button pButton label="Next" icon="pi pi-arrow-right" iconPos="right" (click)="next()"
+                [disabled]="!receiver.name || !receiver.address || !receiver.mobile"></button>
+        </div>
+    </div>
+
+    <!-- ============================================ -->
+    <!-- Step 4: Confirmation                         -->
+    <!-- ============================================ -->
+    <div *ngIf="step === 4">
+        <div class="font-semibold text-xl mb-6 flex items-center gap-2">
+            <i class="pi pi-check-circle text-green-500"></i>
+            Review &amp; Confirm Transaction
+        </div>
+
+        <!-- Row 1: Sender & Receiver side by side -->
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            <!-- Sender Info -->
+            <div class="bg-surface-0 border border-surface rounded-xl p-5 shadow-sm">
+                <div class="font-bold text-lg mb-4 flex items-center gap-2 text-green-700">
+                    <div class="w-8 h-8 rounded-full bg-green-100 flex items-center justify-center">
+                        <i class="pi pi-user text-green-600"></i>
+                    </div>
+                    Sender
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-id-card text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Full Name</div>
+                            <div class="font-semibold">{{ sender.name }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-map-marker text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Address</div>
+                            <div class="font-semibold">{{ sender.address }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-phone text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Mobile</div>
+                            <div class="font-semibold">{{ sender.mobile }}</div>
+                        </div>
+                    </div>
+                    <ng-container *ngIf="sender.showOther">
+                        <hr class="my-2">
+                        <div *ngIf="sender.idType" class="flex items-start gap-2">
+                            <i class="pi pi-file text-color-secondary mt-0.5"></i>
+                            <div>
+                                <div class="text-color-secondary text-xs">ID Type</div>
+                                <div class="font-semibold">{{ sender.idType }}</div>
+                            </div>
+                        </div>
+                        <div *ngIf="sender.idNumber" class="flex items-start gap-2">
+                            <i class="pi pi-hashtag text-color-secondary mt-0.5"></i>
+                            <div>
+                                <div class="text-color-secondary text-xs">ID Number</div>
+                                <div class="font-semibold">{{ sender.idNumber }}</div>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+            </div>
+
+            <!-- Receiver Info -->
+            <div class="bg-surface-0 border border-surface rounded-xl p-5 shadow-sm">
+                <div class="font-bold text-lg mb-4 flex items-center gap-2 text-orange-700">
+                    <div class="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
+                        <i class="pi pi-user-plus text-orange-600"></i>
+                    </div>
+                    Receiver
+                </div>
+                <div class="space-y-3 text-sm">
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-id-card text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Full Name</div>
+                            <div class="font-semibold">{{ receiver.name }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-map-marker text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Address</div>
+                            <div class="font-semibold">{{ receiver.address }}</div>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2">
+                        <i class="pi pi-phone text-color-secondary mt-0.5"></i>
+                        <div>
+                            <div class="text-color-secondary text-xs">Mobile</div>
+                            <div class="font-semibold">{{ receiver.mobile }}</div>
+                        </div>
+                    </div>
+                    <ng-container *ngIf="receiver.showOther">
+                        <hr class="my-2">
+                        <div *ngIf="receiver.idType" class="flex items-start gap-2">
+                            <i class="pi pi-file text-color-secondary mt-0.5"></i>
+                            <div>
+                                <div class="text-color-secondary text-xs">ID Type</div>
+                                <div class="font-semibold">{{ receiver.idType }}</div>
+                            </div>
+                        </div>
+                        <div *ngIf="receiver.idNumber" class="flex items-start gap-2">
+                            <i class="pi pi-hashtag text-color-secondary mt-0.5"></i>
+                            <div>
+                                <div class="text-color-secondary text-xs">ID Number</div>
+                                <div class="font-semibold">{{ receiver.idNumber }}</div>
+                            </div>
+                        </div>
+                    </ng-container>
+                </div>
+            </div>
+        </div>
+
+        <!-- Row 2: Transaction Details (full width) -->
+        <div class="bg-surface-0 border border-surface rounded-xl p-5 shadow-sm mb-6">
+            <div class="font-bold text-lg mb-4 flex items-center gap-2 text-blue-700">
+                <div class="w-8 h-8 rounded-full bg-blue-100 flex items-center justify-center">
+                    <i class="pi pi-credit-card text-blue-600"></i>
+                </div>
+                Transaction Details
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <!-- Left: Route & Payment -->
+                <div class="space-y-3 text-sm">
+                    <div class="font-semibold text-xs text-color-secondary uppercase tracking-wide mb-2">Route &amp; Payment</div>
+                    <div><span class="text-color-secondary">From Category: </span><span class="font-semibold">{{ fromCategoryName }}</span></div>
+                    <div><span class="text-color-secondary">To Category: </span><span class="font-semibold">{{ toCategoryName }}</span></div>
+                    <div><span class="text-color-secondary">Payment Type: </span><span class="font-semibold">{{ paymentTypeName }}</span></div>
+                    <div><span class="text-color-secondary">Payout: </span><span class="font-semibold">{{ payoutSummaryLabel }}</span></div>
+                </div>
+
+                <!-- Center: Agent Details -->
+                <div class="space-y-3 text-sm">
+                    <div class="font-semibold text-xs text-color-secondary uppercase tracking-wide mb-2">Agent / Branch</div>
+                    <div *ngIf="selectedSenderAgent"><span class="text-color-secondary">Sender Agent: </span><span class="font-semibold">{{ selectedSenderAgent.name }}</span></div>
+                    <div *ngIf="selectedSenderBranch"><span class="text-color-secondary">Sender Branch: </span><span class="font-semibold">{{ selectedSenderBranch.branchName }}</span></div>
+                    <div *ngIf="selectedPayoutAgent && payoutMode !== 'cash'"><span class="text-color-secondary">Payout Agent: </span><span class="font-semibold">{{ selectedPayoutAgent.name }}</span></div>
+                    <div *ngIf="selectedPayoutBranch && payoutMode !== 'cash'"><span class="text-color-secondary">Payout Branch: </span><span class="font-semibold">{{ selectedPayoutBranch.branchName }}</span></div>
+                    <div *ngIf="selectedAgent"><span class="text-color-secondary">Agent: </span><span class="font-semibold">{{ agentName }}</span></div>
+                </div>
+
+                <!-- Right: Amounts -->
+                <div class="space-y-3 text-sm">
+                    <div class="font-semibold text-xs text-color-secondary uppercase tracking-wide mb-2">Amounts</div>
+                    <div><span class="text-color-secondary">Send Amount: </span><span class="font-semibold">{{ transaction.transferAmount | number:'1.2-2' }}</span></div>
+                    <div><span class="text-color-secondary">Service Fee: </span><span class="font-semibold">{{ transaction.serviceFee | number:'1.2-2' }}</span></div>
+                    <div class="border-t pt-2 mt-1">
+                        <span class="font-bold">Total Collected: </span>
+                        <span class="font-bold text-primary text-lg">{{ transaction.collectedAmount | number:'1.2-2' }}</span>
+                    </div>
+                    <div *ngIf="fxInfo"><span class="text-color-secondary">Exchange Rate: </span><span class="font-semibold">{{ fxInfo.customerRate | number:'1.2-4' }}</span></div>
+                    <div *ngIf="fxInfo">
+                        <span class="text-color-secondary">Receiver Gets: </span>
+                        <span class="font-bold text-green-600">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex justify-between">
+            <button pButton label="Back" icon="pi pi-arrow-left" class="p-button-secondary" (click)="prev()"></button>
+            <button pButton label="Confirm & Send" icon="pi pi-check" severity="success" (click)="confirm()"
+                [loading]="submitting"></button>
+        </div>
+    </div>
+</div>
+
+<!-- ============================================ -->
+<!-- Receipt Dialog                               -->
+<!-- ============================================ -->
+<p-dialog header="Transaction Receipt" [(visible)]="showReceipt" [modal]="true" [closable]="false"
+    [style]="{width: '800px', maxWidth: '95vw'}" [contentStyle]="{padding: '0'}">
+    <div id="print-receipt" class="receipt-container">
+        <!-- Office Copy -->
+        <div class="receipt-copy">
+            <div class="receipt-header">
+                <div class="receipt-logo">
+                    <i class="pi pi-building text-3xl text-primary"></i>
+                </div>
+                <h2 class="receipt-title">TNT Remittance</h2>
+                <p class="receipt-subtitle">Transaction Receipt</p>
+                <p-tag value="Office Copy" severity="info" styleClass="mt-2"></p-tag>
+            </div>
+
+            <div class="receipt-ref" *ngIf="receiptData">
+                <span>Transaction ID: <strong>#{{ receiptData.transactionId }}</strong></span>
+                <span>Ref: <strong>{{ receiptData.referenceNumber }}</strong></span>
+            </div>
+
+            <div class="receipt-body">
+                <table class="receipt-table">
+                    <tr><td class="receipt-label">From → To</td><td>{{ fromCategoryName }} → {{ toCategoryName }}</td></tr>
+                    <tr><td class="receipt-label">Payment Type</td><td>{{ paymentTypeName }}</td></tr>
+                    <tr *ngIf="selectedAgent"><td class="receipt-label">Agent</td><td>{{ agentName }}</td></tr>
+                    <tr><td class="receipt-label">Send Amount</td><td class="font-semibold">{{ transaction.transferAmount | number:'1.2-2' }}</td></tr>
+                    <tr><td class="receipt-label">Service Fee</td><td>{{ transaction.serviceFee | number:'1.2-2' }}</td></tr>
+                    <tr class="receipt-total"><td class="receipt-label">Total Collected</td><td class="font-bold">{{ transaction.collectedAmount | number:'1.2-2' }}</td></tr>
+                    <tr *ngIf="fxInfo"><td class="receipt-label">Exchange Rate</td><td>{{ fxInfo.customerRate | number:'1.2-4' }}</td></tr>
+                    <tr *ngIf="fxInfo"><td class="receipt-label">Receiver Gets</td><td class="font-bold text-green-600">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</td></tr>
+                </table>
+
+                <div class="receipt-parties">
+                    <div class="receipt-party">
+                        <div class="receipt-party-header">Sender</div>
+                        <div>{{ sender.name }}</div>
+                        <div>{{ sender.address }}</div>
+                        <div>{{ sender.mobile }}</div>
+                    </div>
+                    <div class="receipt-party">
+                        <div class="receipt-party-header">Receiver</div>
+                        <div>{{ receiver.name }}</div>
+                        <div>{{ receiver.address }}</div>
+                        <div>{{ receiver.mobile }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Dashed Separator -->
+        <div class="receipt-separator">
+            <span>✂ Cut Here</span>
+        </div>
+
+        <!-- Customer Copy -->
+        <div class="receipt-copy receipt-customer">
+            <div class="receipt-watermark">CUSTOMER COPY</div>
+            <div class="receipt-header">
+                <div class="receipt-logo">
+                    <i class="pi pi-building text-3xl text-primary"></i>
+                </div>
+                <h2 class="receipt-title">TNT Remittance</h2>
+                <p class="receipt-subtitle">Transaction Receipt</p>
+                <p-tag value="Customer Copy" severity="success" styleClass="mt-2"></p-tag>
+            </div>
+
+            <div class="receipt-ref" *ngIf="receiptData">
+                <span>Transaction ID: <strong>#{{ receiptData.transactionId }}</strong></span>
+                <span>Ref: <strong>{{ receiptData.referenceNumber }}</strong></span>
+            </div>
+
+            <div class="receipt-body">
+                <table class="receipt-table">
+                    <tr><td class="receipt-label">From → To</td><td>{{ fromCategoryName }} → {{ toCategoryName }}</td></tr>
+                    <tr><td class="receipt-label">Payment Type</td><td>{{ paymentTypeName }}</td></tr>
+                    <tr *ngIf="selectedAgent"><td class="receipt-label">Agent</td><td>{{ agentName }}</td></tr>
+                    <tr><td class="receipt-label">Send Amount</td><td class="font-semibold">{{ transaction.transferAmount | number:'1.2-2' }}</td></tr>
+                    <tr><td class="receipt-label">Service Fee</td><td>{{ transaction.serviceFee | number:'1.2-2' }}</td></tr>
+                    <tr class="receipt-total"><td class="receipt-label">Total Collected</td><td class="font-bold">{{ transaction.collectedAmount | number:'1.2-2' }}</td></tr>
+                    <tr *ngIf="fxInfo"><td class="receipt-label">Exchange Rate</td><td>{{ fxInfo.customerRate | number:'1.2-4' }}</td></tr>
+                    <tr *ngIf="fxInfo"><td class="receipt-label">Receiver Gets</td><td class="font-bold text-green-600">{{ fxInfo.receiveAmount | number:'1.2-2' }} {{ fxInfo.receivingCurrency }}</td></tr>
+                </table>
+
+                <div class="receipt-parties">
+                    <div class="receipt-party">
+                        <div class="receipt-party-header">Sender</div>
+                        <div>{{ sender.name }}</div>
+                        <div>{{ sender.address }}</div>
+                        <div>{{ sender.mobile }}</div>
+                    </div>
+                    <div class="receipt-party">
+                        <div class="receipt-party-header">Receiver</div>
+                        <div>{{ receiver.name }}</div>
+                        <div>{{ receiver.address }}</div>
+                        <div>{{ receiver.mobile }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="flex justify-end gap-2 p-4 print-hide">
+        <button pButton label="Print" icon="pi pi-print" (click)="printReceipt()"></button>
+        <button pButton label="Close" icon="pi pi-times" class="p-button-secondary" (click)="closeReceipt()"></button>
+    </div>
+</p-dialog>

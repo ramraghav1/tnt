@@ -1,0 +1,7 @@
+:host ::ng-deep {
+    .p-datatable {
+        .p-datatable-thead > tr > th {
+            font-weight: 600;
+        }
+    }
+}

@@ -1,0 +1,98 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <span class="font-semibold text-xl flex items-center gap-2">
+                <i class="pi pi-list text-primary"></i>
+                Transaction Report
+            </span>
+        </ng-template>
+        <ng-template #end>
+            <div class="flex gap-4 items-end flex-wrap">
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold">From Date</label>
+                    <input pInputText type="date" [(ngModel)]="fromDate" class="w-40" />
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-sm font-semibold">To Date</label>
+                    <input pInputText type="date" [(ngModel)]="toDate" class="w-40" />
+                </div>
+                <button pButton label="Search" icon="pi pi-search" (click)="fetchTransactions()"></button>
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="transactions"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [rowHover]="true"
+        [showGridlines]="true"
+        [globalFilterFields]="['transactionId','referenceNumber','paymentType','payoutLocation','collectedAmount','serviceFee','transferAmount','senderName','senderAddress','senderMobile','receiverName','receiverAddress','receiverMobile']"
+        responsiveLayout="scroll"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search transactions..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="transactionId" style="min-width: 6rem">Txn ID <p-sortIcon field="transactionId"></p-sortIcon></th>
+                <th pSortableColumn="referenceNumber" style="min-width: 8rem">Reference <p-sortIcon field="referenceNumber"></p-sortIcon></th>
+                <th pSortableColumn="paymentType">Payment Type <p-sortIcon field="paymentType"></p-sortIcon></th>
+                <th pSortableColumn="payoutLocation">Corridor <p-sortIcon field="payoutLocation"></p-sortIcon></th>
+                <th pSortableColumn="collectedAmount" style="min-width: 8rem">Collected <p-sortIcon field="collectedAmount"></p-sortIcon></th>
+                <th pSortableColumn="serviceFee" style="min-width: 7rem">Fee <p-sortIcon field="serviceFee"></p-sortIcon></th>
+                <th pSortableColumn="transferAmount" style="min-width: 8rem">Transfer <p-sortIcon field="transferAmount"></p-sortIcon></th>
+                <th pSortableColumn="senderName">Sender <p-sortIcon field="senderName"></p-sortIcon></th>
+                <th>Sender Contact</th>
+                <th pSortableColumn="receiverName">Receiver <p-sortIcon field="receiverName"></p-sortIcon></th>
+                <th>Receiver Contact</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-tx>
+            <tr>
+                <td class="font-semibold">{{ tx.transactionId }}</td>
+                <td>
+                    <p-tag [value]="tx.referenceNumber" severity="info"></p-tag>
+                </td>
+                <td>{{ tx.paymentType }}</td>
+                <td>{{ tx.payoutLocation }}</td>
+                <td class="font-semibold">{{ tx.collectedAmount | number:'1.2-2' }}</td>
+                <td>{{ tx.serviceFee | number:'1.2-2' }}</td>
+                <td class="font-semibold">{{ tx.transferAmount | number:'1.2-2' }}</td>
+                <td>
+                    <div class="font-semibold">{{ tx.senderName }}</div>
+                    <div class="text-sm text-color-secondary">{{ tx.senderAddress }}</div>
+                </td>
+                <td>{{ tx.senderMobile }}</td>
+                <td>
+                    <div class="font-semibold">{{ tx.receiverName }}</div>
+                    <div class="text-sm text-color-secondary">{{ tx.receiverAddress }}</div>
+                </td>
+                <td>{{ tx.receiverMobile }}</td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="11" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-inbox text-4xl"></i>
+                        <span>No transactions found. Select a date range and click Search.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

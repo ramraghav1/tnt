@@ -1,0 +1,79 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">{{ 'booking.bookingList' | translate }}</h2>
+    </div>
+
+    <p-table
+        #dt
+        [value]="itineraries"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [globalFilterFields]="['title', 'description', 'difficultyLevel']"
+        responsiveLayout="scroll"
+        [rowsPerPageOptions]="[10, 20, 50]">
+
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-3">
+                <button pButton icon="pi pi-filter-slash" severity="secondary" [outlined]="true"
+                        (click)="clear(dt)" [label]="'common.clear' | translate"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text"
+                           (input)="onGlobalFilter(dt, $event)"
+                           [placeholder]="'booking.searchItineraries' | translate" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="id" style="width:60px">{{ 'booking.id' | translate }} <p-sortIcon field="id"></p-sortIcon></th>
+                <th pSortableColumn="title" style="min-width:160px;max-width:220px">{{ 'booking.title' | translate }} <p-sortIcon field="title"></p-sortIcon></th>
+                <th style="min-width:180px;max-width:300px">{{ 'booking.description' | translate }}</th>
+                <th pSortableColumn="durationDays" style="width:110px">{{ 'booking.duration' | translate }} <p-sortIcon field="durationDays"></p-sortIcon></th>
+                <th pSortableColumn="difficultyLevel" style="width:140px">{{ 'booking.difficulty' | translate }} <p-sortIcon field="difficultyLevel"></p-sortIcon></th>
+                <th style="width:100px">{{ 'booking.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-itinerary>
+            <tr>
+                <td>{{ itinerary.id }}</td>
+                <td style="max-width:220px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap;"
+                    [pTooltip]="itinerary.title" tooltipPosition="top" [showDelay]="500">
+                    {{ itinerary.title }}
+                </td>
+                <td style="max-width:300px;">
+                    <span class="block overflow-hidden text-ellipsis whitespace-nowrap" style="max-width:280px"
+                          [pTooltip]="itinerary.description" tooltipPosition="top" [showDelay]="300">
+                        {{ itinerary.description | slice:0:120 }}{{ (itinerary.description?.length ?? 0) > 120 ? '…' : '' }}
+                    </span>
+                </td>
+                <td>{{ itinerary.durationDays }} {{ 'booking.days' | translate }}</td>
+                <td>
+                    <p-tag [value]="itinerary.difficultyLevel"
+                           [severity]="getDifficultySeverity(itinerary.difficultyLevel)"
+                           [rounded]="true">
+                    </p-tag>
+                </td>
+                <td>
+                    <button pButton icon="pi pi-bookmark" label="Process Booking"
+                            class="p-button-sm p-button-outlined p-button-primary"
+                            (click)="viewDetail(itinerary)"
+                            [pTooltip]="'booking.viewDetailsAndBook' | translate">
+                    </button>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="6" class="text-center">{{ 'booking.noItinerariesFound' | translate }}</td>
+            </tr>
+        </ng-template>
+
+    </p-table>
+</div>

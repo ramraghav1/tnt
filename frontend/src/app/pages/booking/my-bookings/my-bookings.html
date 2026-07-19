@@ -1,0 +1,125 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <!-- Header -->
+    <div class="flex justify-between items-center mb-4 flex-wrap gap-3">
+        <div class="font-semibold text-xl">{{ 'booking.myBookings.title' | translate }}</div>
+        <div class="flex gap-2 items-center flex-wrap">
+            <button pButton icon="pi pi-refresh" severity="secondary" [outlined]="true" (click)="loadBookings()" [pTooltip]="'common.refresh' | translate"></button>
+            <button pButton icon="pi pi-plus" [label]="'booking.myBookings.newBooking' | translate" routerLink="/booking-list"></button>
+        </div>
+    </div>
+
+    <!-- Bookings Table -->
+    <p-table
+        #dt
+        [value]="bookings"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[5, 10, 25, 50]"
+        [loading]="loading"
+        [globalFilterFields]="['bookingReference', 'templateTitle', 'status', 'paymentStatus', 'primaryTravelerName', 'primaryTravelerContact', 'primaryTravelerEmail']"
+        [showCurrentPageReport]="true"
+        [currentPageReportTemplate]="'booking.myBookings.showingPageReport' | translate"
+        responsiveLayout="scroll"
+        sortField="createdAt"
+        [sortOrder]="-1">
+
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-3">
+                <button pButton icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (click)="dt.clear()" [label]="'common.clear' | translate"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input pInputText type="text" [placeholder]="'booking.myBookings.searchPlaceholder' | translate" (input)="onGlobalFilter($event)" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="bookingReference" style="min-width:140px">Booking Ref <p-sortIcon field="bookingReference"></p-sortIcon></th>
+                <th pSortableColumn="templateTitle" style="min-width:160px">Itinerary <p-sortIcon field="templateTitle"></p-sortIcon></th>
+                <th style="min-width:180px">Booker</th>
+                <th pSortableColumn="startDate" style="min-width:110px">Start <p-sortIcon field="startDate"></p-sortIcon></th>
+                <th pSortableColumn="endDate" style="min-width:110px">End <p-sortIcon field="endDate"></p-sortIcon></th>
+                <th pSortableColumn="totalAmount" style="min-width:110px">Amount <p-sortIcon field="totalAmount"></p-sortIcon></th>
+                <th pSortableColumn="status" style="min-width:110px">Status <p-sortIcon field="status"></p-sortIcon></th>
+                <th pSortableColumn="paymentStatus" style="min-width:110px">Payment <p-sortIcon field="paymentStatus"></p-sortIcon></th>
+                <th style="min-width:130px">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-booking>
+            <tr>
+                <td>
+                    <span class="booking-ref" (click)="viewBooking(booking)" style="cursor:pointer">
+                        {{ booking.bookingReference }}
+                    </span>
+                </td>
+                <td>
+                    <span class="itinerary-name">{{ booking.templateTitle }}</span>
+                </td>
+                <td>
+                    <div *ngIf="booking.primaryTravelerName" class="booker-cell">
+                        <div class="booker-name">{{ booking.primaryTravelerName }}</div>
+                        <div class="booker-meta" *ngIf="booking.primaryTravelerContact">
+                            <i class="pi pi-phone"></i> {{ booking.primaryTravelerContact }}
+                        </div>
+                        <div class="booker-meta" *ngIf="booking.primaryTravelerEmail">
+                            <i class="pi pi-envelope"></i> {{ booking.primaryTravelerEmail }}
+                        </div>
+                    </div>
+                    <span *ngIf="!booking.primaryTravelerName" class="text-surface-400 text-sm">-</span>
+                </td>
+                <td>{{ formatDate(booking.startDate) }}</td>
+                <td>{{ formatDate(booking.endDate) }}</td>
+                <td>
+                    <span class="amount">Rs. {{ formatCurrency(booking.totalAmount) }}</span>
+                </td>
+                <td>
+                    <p-tag [value]="booking.status" [severity]="getStatusSeverity(booking.status)"></p-tag>
+                </td>
+                <td>
+                    <p-tag [value]="booking.paymentStatus" [severity]="getPaymentSeverity(booking.paymentStatus)"></p-tag>
+                </td>
+                <td>
+                    <div class="action-btns">
+                        <button pButton icon="pi pi-eye" label="View"
+                            class="p-button-sm p-button-outlined"
+                            (click)="viewBooking(booking)"
+                            pTooltip="View full booking details"></button>
+                        <button
+                            *ngIf="booking.paymentStatus?.toLowerCase() === 'unpaid'"
+                            pButton icon="pi pi-credit-card"
+                            class="p-button-sm p-button-success"
+                            (click)="payNow(booking)"
+                            pTooltip="Make payment"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="9">
+                    <div class="empty-state">
+                        <i class="pi pi-inbox"></i>
+                        <h3>{{ 'booking.myBookings.noBookingsYet' | translate }}</h3>
+                        <p>{{ 'booking.myBookings.noBookingsMessage' | translate }}</p>
+                        <button pButton [label]="'booking.myBookings.browseItineraries' | translate" icon="pi pi-arrow-right" routerLink="/booking-list"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Payment Dialog -->
+<app-payment-dialog
+    [(visible)]="showPaymentDialog"
+    [bookingId]="payBookingId"
+    [bookingReference]="payBookingRef"
+    [totalAmount]="payTotalAmount"
+    [discountAmount]="payDiscountAmount"
+    (paymentComplete)="onPaymentComplete()"
+></app-payment-dialog>

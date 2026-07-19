@@ -1,0 +1,232 @@
+<p-toast></p-toast>
+
+<p-fluid>
+    <div class="flex flex-col gap-8">
+        <!-- Loading State -->
+        <div *ngIf="loading" class="card flex justify-content-center align-items-center" style="min-height: 400px;">
+            <p-progressSpinner></p-progressSpinner>
+        </div>
+
+        <!-- Content -->
+        <div *ngIf="!loading && tenant" class="flex flex-col gap-8">
+            
+            <!-- Page Header -->
+            <div class="card flex flex-col gap-6">
+                <h2 class="text-2xl font-bold m-0">{{ 'tenant.tenantManagement' | translate }}</h2>
+                
+                <!-- Tenant Overview Section -->
+                <div>
+                    <div class="font-semibold text-xl mb-4">{{ 'tenant.tenantOverview' | translate }}</div>
+                    
+                    <div class="grid">
+                        <div class="col-12 md:col-6 lg:col-3">
+                            <div class="flex flex-col gap-2">
+                                <label class="text-600 text-sm">{{ 'tenant.name' | translate }}</label>
+                                <div class="text-900 font-semibold">{{ tenant.name }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 md:col-6 lg:col-3">
+                            <div class="flex flex-col gap-2">
+                                <label class="text-600 text-sm">{{ 'tenant.subdomain' | translate }}</label>
+                                <div class="text-900 font-semibold">{{ tenant.subdomain }}</div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 md:col-6 lg:col-3">
+                            <div class="flex flex-col gap-2">
+                                <label class="text-600 text-sm">{{ 'tenant.status' | translate }}</label>
+                                <div>
+                                    <p-tag [value]="tenant.status" [severity]="getStatusSeverity(tenant.status)"></p-tag>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-12 md:col-6 lg:col-3">
+                            <div class="flex flex-col gap-2">
+                                <label class="text-600 text-sm">{{ 'tenant.products' | translate }}</label>
+                                <div class="flex gap-2 flex-wrap">
+                                    <p-tag *ngFor="let product of tenant.products" [value]="product" severity="success"></p-tag>
+                                    <p-tag *ngIf="tenant.products.length === 0" value="None" severity="secondary"></p-tag>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Edit Basic Information -->
+            <div class="card flex flex-col gap-6">
+                <div class="font-semibold text-xl">{{ 'tenant.editTenantInfo' | translate }}</div>
+                
+                <form (ngSubmit)="saveTenantInfo()" #tenantForm="ngForm">
+                    <div class="flex flex-col gap-6">
+                        <!-- Name and Phone -->
+                        <div class="flex flex-col md:flex-row gap-6">
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="name">{{ 'tenant.name' | translate }} *</label>
+                                <input pInputText id="name" [(ngModel)]="name" name="name" required 
+                                    placeholder="Enter tenant name" class="w-full" />
+                            </div>
+
+                            <div class="flex flex-col gap-2 w-full">
+                                <label for="contactPhone">{{ 'tenant.contactPhone' | translate }}</label>
+                                <input pInputText id="contactPhone" [(ngModel)]="contactPhone" name="contactPhone" 
+                                    placeholder="Enter contact phone" class="w-full" />
+                            </div>
+                        </div>
+
+                        <!-- Logo URL -->
+                        <div class="flex flex-col gap-2 w-full">
+                            <label for="logoUrl">{{ 'tenant.logoUrl' | translate }}</label>
+                            <input pInputText id="logoUrl" [(ngModel)]="logoUrl" name="logoUrl" 
+                                placeholder="https://example.com/logo.png" class="w-full" />
+                            <small class="text-600">Provide a URL to your tenant logo</small>
+                        </div>
+
+                        <!-- Logo Upload -->
+                        <div class="flex flex-col gap-2 w-full">
+                            <label>{{ 'tenant.uploadLogo' | translate }}</label>
+                            <p-fileUpload 
+                                mode="basic" 
+                                chooseLabel="Choose Logo"
+                                accept="image/*"
+                                [maxFileSize]="1000000"
+                                (onSelect)="onLogoUpload($event)"
+                                [auto]="false"
+                                customUpload="true">
+                            </p-fileUpload>
+                            <small class="text-600">Maximum file size: 1MB (jpg, png, gif)</small>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 justify-content-end">
+                            <button pButton type="button"
+                                [label]="'common.cancel' | translate" 
+                                severity="secondary" 
+                                [outlined]="true"
+                                (click)="loadTenant()">
+                            </button>
+                            <button pButton type="submit"
+                                [label]="'common.save' | translate" 
+                                icon="pi pi-save"
+                                [loading]="saving"
+                                [disabled]="!tenantForm.valid">
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Tenant Configuration Settings -->
+            <div class="card flex flex-col gap-6">
+                <div class="font-semibold text-xl">{{ 'tenant.tenantConfiguration' | translate }}</div>
+                
+                <form (ngSubmit)="saveSettings()" #settingsForm="ngForm">
+                    <div class="flex flex-col gap-6">
+                        <!-- Limits Section -->
+                        <div>
+                            <div class="font-medium text-lg mb-3">Usage Limits</div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="flex flex-col gap-2 w-full">
+                                    <label for="maxUsers">{{ 'tenant.maxUsers' | translate }}</label>
+                                    <p-inputNumber 
+                                        id="maxUsers" 
+                                        [(ngModel)]="maxUsers" 
+                                        name="maxUsers"
+                                        [min]="1" 
+                                        [max]="1000"
+                                        [showButtons]="true"
+                                        class="w-full">
+                                    </p-inputNumber>
+                                    <small class="text-600">Maximum number of users allowed for this tenant</small>
+                                </div>
+
+                                <div class="flex flex-col gap-2 w-full">
+                                    <label for="maxBookings">{{ 'tenant.maxBookingsPerMonth' | translate }}</label>
+                                    <p-inputNumber 
+                                        id="maxBookings" 
+                                        [(ngModel)]="maxBookingsPerMonth" 
+                                        name="maxBookingsPerMonth"
+                                        [min]="1" 
+                                        [max]="10000"
+                                        [showButtons]="true"
+                                        class="w-full">
+                                    </p-inputNumber>
+                                    <small class="text-600">Maximum bookings allowed per month</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Regional Settings -->
+                        <div>
+                            <div class="font-medium text-lg mb-3">Regional Settings</div>
+                            <div class="flex flex-col md:flex-row gap-6">
+                                <div class="flex flex-col gap-2 w-full">
+                                    <label for="timezone">{{ 'tenant.timeZone' | translate }}</label>
+                                    <p-select 
+                                        id="timezone" 
+                                        [(ngModel)]="timeZone" 
+                                        name="timeZone"
+                                        [options]="timezones" 
+                                        optionLabel="label" 
+                                        optionValue="value"
+                                        placeholder="Select timezone"
+                                        class="w-full">
+                                    </p-select>
+                                    <small class="text-600">Time zone for date and time displays</small>
+                                </div>
+
+                                <div class="flex flex-col gap-2 w-full">
+                                    <label for="currency">{{ 'tenant.currency' | translate }}</label>
+                                    <p-select 
+                                        id="currency" 
+                                        [(ngModel)]="currency" 
+                                        name="currency"
+                                        [options]="currencies" 
+                                        optionLabel="label" 
+                                        optionValue="value"
+                                        placeholder="Select currency"
+                                        class="w-full">
+                                    </p-select>
+                                    <small class="text-600">Default currency for pricing and billing</small>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Trial Account Warning -->
+                        <div *ngIf="tenant.settings.isTrialAccount" class="surface-100 border-round-lg p-4">
+                            <div class="flex align-items-center gap-3 mb-2">
+                                <i class="pi pi-exclamation-triangle text-orange-500 text-xl"></i>
+                                <span class="font-semibold text-900">{{ 'tenant.trialAccount' | translate }}</span>
+                            </div>
+                            <p class="text-600 m-0 ml-5">
+                                {{ 'tenant.trialAccountWarning' | translate }}
+                            </p>
+                            <p *ngIf="tenant.settings.trialExpiresAt" class="text-600 m-0 ml-5 mt-2">
+                                <strong>Expires:</strong> {{ tenant.settings.trialExpiresAt | date:'mediumDate' }}
+                            </p>
+                        </div>
+
+                        <!-- Action Buttons -->
+                        <div class="flex gap-2 justify-content-end">
+                            <button pButton type="button"
+                                [label]="'common.cancel' | translate" 
+                                severity="secondary" 
+                                [outlined]="true"
+                                (click)="loadTenant()">
+                            </button>
+                            <button pButton type="submit"
+                                [label]="'tenant.saveSettings' | translate" 
+                                icon="pi pi-save"
+                                [loading]="saving"
+                                [disabled]="!settingsForm.valid">
+                            </button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+
+        </div>
+    </div>
+</p-fluid>

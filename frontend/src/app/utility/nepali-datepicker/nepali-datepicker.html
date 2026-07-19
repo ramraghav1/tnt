@@ -1,0 +1,94 @@
+<div class="nepali-datepicker-wrapper">
+    <!-- Toggle AD/BS -->
+    <div class="date-mode-toggle">
+        <span class="mode-label" [class.active]="!isBs">AD</span>
+        <p-toggleswitch [(ngModel)]="isBs" (ngModelChange)="onModeChange()"></p-toggleswitch>
+        <span class="mode-label" [class.active]="isBs">BS</span>
+    </div>
+
+    <!-- AD Mode: PrimeNG date picker -->
+    <div *ngIf="!isBs">
+        <p-datepicker
+            [(ngModel)]="adDate"
+            [showIcon]="showIcon"
+            dateFormat="yy-mm-dd"
+            [placeholder]="placeholder"
+            [minDate]="minDate"
+            (ngModelChange)="onAdDateChange()">
+        </p-datepicker>
+    </div>
+
+    <!-- BS Mode: Nepali calendar picker -->
+    <div *ngIf="isBs" class="bs-picker">
+        <!-- Input field -->
+        <div class="bs-input-wrapper" (click)="toggleCalendar()">
+            <i *ngIf="showIcon" class="pi pi-calendar bs-input-icon"></i>
+            <input
+                type="text"
+                class="bs-input"
+                [value]="displayValue"
+                [placeholder]="placeholder"
+                readonly />
+            <i *ngIf="adDate" class="pi pi-times bs-clear-icon" (click)="clearDate(); $event.stopPropagation()"></i>
+        </div>
+
+        <!-- Calendar dropdown -->
+        <div *ngIf="isOpen" class="bs-calendar-dropdown">
+            <!-- Header: nav + month/year -->
+            <div class="bs-cal-header">
+                <button class="bs-nav-btn" (click)="prevMonth(); $event.stopPropagation()">
+                    <i class="pi pi-chevron-left"></i>
+                </button>
+
+                <div class="bs-header-center">
+                    <select class="bs-month-select" [ngModel]="viewMonth" (ngModelChange)="onMonthChange($event)">
+                        <option *ngFor="let m of monthNames; let mi = index" [ngValue]="mi">
+                            {{ m }} ({{ monthNamesNp[mi] }})
+                        </option>
+                    </select>
+                    <select class="bs-year-select" [ngModel]="viewYear" (ngModelChange)="onYearChange($event)">
+                        <option *ngFor="let y of yearOptions" [ngValue]="y">{{ y }}</option>
+                    </select>
+                </div>
+
+                <button class="bs-nav-btn" (click)="nextMonth(); $event.stopPropagation()">
+                    <i class="pi pi-chevron-right"></i>
+                </button>
+            </div>
+
+            <!-- Day column headers -->
+            <div class="bs-cal-days-header">
+                <span *ngFor="let dh of dayHeaders" class="bs-day-header">{{ dh }}</span>
+            </div>
+
+            <!-- Calendar grid -->
+            <div class="bs-cal-body">
+                <div *ngFor="let week of calendarWeeks" class="bs-cal-week">
+                    <button
+                        *ngFor="let cell of week"
+                        class="bs-cal-cell"
+                        [class.other-month]="!cell.currentMonth"
+                        [class.today]="cell.today"
+                        [class.selected]="cell.selected"
+                        [class.disabled]="cell.disabled"
+                        [disabled]="cell.disabled || !cell.currentMonth"
+                        (click)="selectDay(cell); $event.stopPropagation()">
+                        {{ cell.day }}
+                    </button>
+                </div>
+            </div>
+
+            <!-- Footer -->
+            <div class="bs-cal-footer">
+                <button class="bs-today-btn" (click)="selectToday(); $event.stopPropagation()">
+                    <i class="pi pi-home"></i> Today
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Converted date display -->
+    <div *ngIf="convertedText" class="converted-date-text">
+        {{ convertedText }}
+    </div>
+</div>

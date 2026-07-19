@@ -1,0 +1,229 @@
+<p-toast></p-toast>
+
+<!-- Loading -->
+<div *ngIf="loading" class="flex justify-center items-center" style="min-height:60vh">
+    <p-progressSpinner strokeWidth="4" animationDuration=".8s"/>
+</div>
+
+<!-- Not Found -->
+<div *ngIf="!loading && notFound" class="not-found-wrap">
+    <i class="pi pi-search text-5xl text-yellow-500 mb-3"></i>
+    <h3 class="mb-1">Booking Not Found</h3>
+    <p class="text-surface-500 mb-4">The booking reference you entered does not exist.</p>
+    <button pButton label="Back to My Bookings" icon="pi pi-arrow-left" class="p-button-outlined" (click)="goBack()"></button>
+</div>
+
+<!-- Detail -->
+<div *ngIf="!loading && booking" class="bv-wrap">
+
+    <!-- HEADER CARD -->
+    <div class="card bv-header-card">
+        <div class="flex items-center gap-3 flex-wrap">
+            <button pButton icon="pi pi-arrow-left" severity="secondary" [outlined]="true" size="small"
+                    (click)="goBack()" class="print-hide"></button>
+            <div class="flex-1 min-w-0">
+                <div class="flex items-center gap-2 flex-wrap">
+                    <span class="bv-ref">{{ booking.bookingReference }}</span>
+                    <p-tag [value]="booking.status" [severity]="getStatusSeverity(booking.status)"></p-tag>
+                    <p-tag [value]="booking.paymentStatus" [severity]="getPaymentSeverity(booking.paymentStatus)"></p-tag>
+                </div>
+                <div class="bv-itinerary-name mt-1">{{ booking.templateTitle }}</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- TWO-COLUMN: BOOKING INFO + FINANCIAL -->
+    <div class="bv-row-2 mt-3">
+
+        <!-- Booking Information -->
+        <div class="card bv-info-card">
+            <div class="bv-section-title"><i class="pi pi-info-circle"></i> Booking Information</div>
+            <div class="bv-info-grid">
+                <div class="bv-row"><span class="bv-lbl">Reference</span><span class="bv-val mono">{{ booking.bookingReference }}</span></div>
+                <div class="bv-row"><span class="bv-lbl">Itinerary</span><span class="bv-val">{{ booking.templateTitle }}</span></div>
+                <div class="bv-row"><span class="bv-lbl">Start Date</span><span class="bv-val">{{ formatDate(booking.startDate) }}</span></div>
+                <div class="bv-row"><span class="bv-lbl">End Date</span><span class="bv-val">{{ formatDate(booking.endDate) }}</span></div>
+                <div class="bv-row"><span class="bv-lbl">Created</span><span class="bv-val">{{ formatDateTime(booking.createdAt) }}</span></div>
+                <div class="bv-row">
+                    <span class="bv-lbl">Status</span>
+                    <span><p-tag [value]="booking.status" [severity]="getStatusSeverity(booking.status)"></p-tag></span>
+                </div>
+                <div class="bv-row">
+                    <span class="bv-lbl">Approvals</span>
+                    <span class="bv-val">
+                        Traveller:
+                        <strong [class.text-green-600]="booking.travelerApproved" [class.text-orange-500]="!booking.travelerApproved">
+                            {{ booking.travelerApproved ? 'Approved' : 'Pending' }}
+                        </strong>
+                        &nbsp;&middot;&nbsp;
+                        Admin:
+                        <strong [class.text-green-600]="booking.adminApproved" [class.text-orange-500]="!booking.adminApproved">
+                            {{ booking.adminApproved ? 'Approved' : 'Pending' }}
+                        </strong>
+                    </span>
+                </div>
+                <div class="bv-row" *ngIf="booking.specialRequests">
+                    <span class="bv-lbl">Special Requests</span>
+                    <span class="bv-val">{{ booking.specialRequests }}</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Financial Summary -->
+        <div class="card bv-finance-card">
+            <div class="bv-section-title"><i class="pi pi-wallet"></i> Financial Summary</div>
+            <div class="bv-finance-rows">
+                <div class="bv-fin-row bv-fin-total">
+                    <span>Total Amount</span><span>Rs. {{ formatAmount(booking.totalAmount) }}</span>
+                </div>
+                <div class="bv-fin-row bv-fin-paid">
+                    <span>Amount Paid</span><span>Rs. {{ formatAmount(booking.amountPaid) }}</span>
+                </div>
+                <div class="bv-fin-row bv-fin-balance" [class.bv-fin-settled]="booking.balanceAmount === 0">
+                    <span>Balance Due</span><span>Rs. {{ formatAmount(booking.balanceAmount) }}</span>
+                </div>
+            </div>
+            <div class="bv-pay-status mt-3">
+                <p-tag [value]="booking.paymentStatus" [severity]="getPaymentSeverity(booking.paymentStatus)"></p-tag>
+            </div>
+
+            <!-- Payment History inside finance card -->
+            <div *ngIf="booking.payments.length" class="mt-4">
+                <div class="bv-sub-title"><i class="pi pi-history"></i> Payment History</div>
+                <table class="bv-pay-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Amount</th>
+                            <th>Method</th>
+                            <th>Reference</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr *ngFor="let p of booking.payments">
+                            <td>{{ formatDateTime(p.paidAt) }}</td>
+                            <td class="font-semibold">{{ p.currency || 'Rs.' }} {{ formatAmount(p.amount) }}</td>
+                            <td>{{ p.paymentMethod || '—' }}</td>
+                            <td class="mono">{{ p.transactionReference || '—' }}</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- TRAVELLERS -->
+    <div class="card mt-3" *ngIf="booking.travelers.length">
+        <div class="bv-section-title"><i class="pi pi-users"></i> Travellers
+            <span class="bv-badge">{{ booking.travelers.length }}</span>
+        </div>
+        <div class="bv-traveler-grid">
+            <div *ngFor="let t of booking.travelers; let ti = index" class="bv-traveler-card">
+                <div class="bv-t-num">{{ ti + 1 }}</div>
+                <div class="bv-t-info">
+                    <div class="bv-t-name">{{ t.fullName }}</div>
+                    <div class="bv-t-meta">
+                        <span *ngIf="t.contactNumber"><i class="pi pi-phone"></i> {{ t.contactNumber }}</span>
+                        <span *ngIf="t.email"><i class="pi pi-envelope"></i> {{ t.email }}</span>
+                        <span *ngIf="t.nationality"><i class="pi pi-flag"></i> {{ t.nationality }}</span>
+                        <span class="bv-t-type" *ngIf="getTravelerType(t) !== '—'">{{ getTravelerType(t) }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ASSIGNED INVENTORY (guides / vehicles / hotels) -->
+    <div class="card mt-3" *ngIf="inventoryItems.length">
+        <div class="bv-section-title"><i class="pi pi-box"></i> Assigned Resources
+            <span class="bv-badge">{{ inventoryItems.length }}</span>
+        </div>
+        <div class="bv-inventory-grid">
+
+            <ng-container *ngIf="getInventoryByType('guide').length">
+                <div class="bv-inv-group">
+                    <div class="bv-inv-group-title"><i class="pi pi-id-card"></i> Guides</div>
+                    <div *ngFor="let item of getInventoryByType('guide')" class="bv-inv-item">
+                        <div class="bv-inv-name">{{ item.inventoryName }}</div>
+                        <div class="bv-inv-meta">
+                            <span><i class="pi pi-calendar"></i> {{ formatDate(item.startDate) }} – {{ formatDate(item.endDate) }}</span>
+                            <span><i class="pi pi-tag"></i> Rs. {{ formatAmount(item.price) }}</span>
+                            <span *ngIf="item.notes" class="bv-inv-notes"><i class="pi pi-comment"></i> {{ item.notes }}</span>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="getInventoryByType('vehicle').length">
+                <div class="bv-inv-group">
+                    <div class="bv-inv-group-title"><i class="pi pi-car"></i> Vehicles</div>
+                    <div *ngFor="let item of getInventoryByType('vehicle')" class="bv-inv-item">
+                        <div class="bv-inv-name">{{ item.inventoryName }}</div>
+                        <div class="bv-inv-meta">
+                            <span><i class="pi pi-calendar"></i> {{ formatDate(item.startDate) }} – {{ formatDate(item.endDate) }}</span>
+                            <span><i class="pi pi-tag"></i> Rs. {{ formatAmount(item.price) }}</span>
+                            <span *ngIf="item.notes" class="bv-inv-notes"><i class="pi pi-comment"></i> {{ item.notes }}</span>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+            <ng-container *ngIf="getInventoryByType('hotel').length">
+                <div class="bv-inv-group">
+                    <div class="bv-inv-group-title"><i class="pi pi-building"></i> Hotels / Accommodation</div>
+                    <div *ngFor="let item of getInventoryByType('hotel')" class="bv-inv-item">
+                        <div class="bv-inv-name">{{ item.inventoryName }}</div>
+                        <div class="bv-inv-meta">
+                            <span><i class="pi pi-calendar"></i> {{ formatDate(item.startDate) }} – {{ formatDate(item.endDate) }}</span>
+                            <span><i class="pi pi-tag"></i> Rs. {{ formatAmount(item.price) }}</span>
+                            <span *ngIf="item.notes" class="bv-inv-notes"><i class="pi pi-comment"></i> {{ item.notes }}</span>
+                        </div>
+                    </div>
+                </div>
+            </ng-container>
+
+        </div>
+    </div>
+
+    <!-- DAY-BY-DAY PLAN (no accordion, always open for print) -->
+    <div class="card mt-3" *ngIf="booking.days.length">
+        <div class="bv-section-title"><i class="pi pi-calendar"></i> Day-by-Day Plan
+            <span class="bv-badge">{{ booking.days.length }} days</span>
+        </div>
+        <div class="bv-day-list">
+            <div *ngFor="let day of booking.days; let di = index" class="bv-day">
+                <div class="bv-day-header">
+                    <span class="bv-day-num">{{ day.dayNumber }}</span>
+                    <div class="bv-day-head-info">
+                        <span class="bv-day-title">Day {{ day.dayNumber }}{{ day.title ? ': ' + day.title : '' }}</span>
+                        <div class="bv-day-sub" *ngIf="day.location || day.date">
+                            <span *ngIf="day.location"><i class="pi pi-map-marker"></i> {{ day.location }}</span>
+                            <span *ngIf="day.date"><i class="pi pi-clock"></i> {{ formatDate(day.date) }}</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="bv-day-body">
+                    <div class="bv-day-grid">
+                        <div class="bv-row" *ngIf="day.accommodation">
+                            <span class="bv-lbl"><i class="pi pi-building"></i> Accommodation</span>
+                            <span class="bv-val">{{ day.accommodation }}</span>
+                        </div>
+                        <div class="bv-row" *ngIf="day.transport">
+                            <span class="bv-lbl"><i class="pi pi-car"></i> Transport</span>
+                            <span class="bv-val">{{ day.transport }}</span>
+                        </div>
+                        <div class="bv-row">
+                            <span class="bv-lbl"><i class="pi pi-star"></i> Meals</span>
+                            <span class="bv-val">{{ getMeals(day) }}</span>
+                        </div>
+                        <div class="bv-row" *ngIf="day.activities.length">
+                            <span class="bv-lbl"><i class="pi pi-bolt"></i> Activities</span>
+                            <span class="bv-val">{{ day.activities.join(', ') }}</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+</div>

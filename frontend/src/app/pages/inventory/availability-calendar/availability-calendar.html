@@ -1,0 +1,168 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <h2 class="text-2xl font-bold">{{ 'availability.calendar' | translate }}</h2>
+        <p-button
+            icon="pi pi-ban"
+            [label]="'availability.blockAvailability' | translate"
+            (click)="openBlockDialog()"
+        />
+    </div>
+
+    <!-- Events Table -->
+    <p-table
+        [value]="events"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        responsiveLayout="scroll"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="eventType" style="width:100px">{{ 'availability.type' | translate }} <p-sortIcon field="eventType"></p-sortIcon></th>
+                <th pSortableColumn="title" style="min-width:160px">{{ 'availability.eventTitle' | translate }} <p-sortIcon field="title"></p-sortIcon></th>
+                <th style="min-width:130px">{{ 'availability.guideName' | translate }}</th>
+                <th style="min-width:130px">{{ 'availability.vehicleName' | translate }}</th>
+                <th style="min-width:130px">{{ 'availability.hotelName' | translate }}</th>
+                <th pSortableColumn="startDate" style="width:120px">{{ 'availability.startDate' | translate }} <p-sortIcon field="startDate"></p-sortIcon></th>
+                <th pSortableColumn="endDate" style="width:120px">{{ 'availability.endDate' | translate }} <p-sortIcon field="endDate"></p-sortIcon></th>
+                <th pSortableColumn="status" style="width:120px">{{ 'availability.status' | translate }} <p-sortIcon field="status"></p-sortIcon></th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-event>
+            <tr>
+                <td>
+                    <p-tag [value]="event.eventType" [style]="{'background-color': getEventColor(event)}"></p-tag>
+                </td>
+                <td>
+                    <strong>{{ event.title }}</strong>
+                    <br *ngIf="event.description"/>
+                    <small *ngIf="event.description" class="text-gray-500">{{ event.description }}</small>
+                </td>
+                <td>
+                    <span *ngIf="event.guideName" class="flex items-center gap-1">
+                        <i class="pi pi-user text-blue-500 text-xs"></i>
+                        {{ event.guideName }}
+                    </span>
+                    <span *ngIf="!event.guideName" class="text-gray-400 text-sm">—</span>
+                </td>
+                <td>
+                    <span *ngIf="event.vehicleName" class="flex items-center gap-1">
+                        <i class="pi pi-car text-green-500 text-xs"></i>
+                        {{ event.vehicleName }}
+                    </span>
+                    <span *ngIf="!event.vehicleName" class="text-gray-400 text-sm">—</span>
+                </td>
+                <td>
+                    <span *ngIf="event.hotelName" class="flex items-center gap-1">
+                        <i class="pi pi-building text-orange-500 text-xs"></i>
+                        {{ event.hotelName }}
+                    </span>
+                    <span *ngIf="!event.hotelName" class="text-gray-400 text-sm">—</span>
+                </td>
+                <td>{{ event.startDate | date: 'mediumDate' }}</td>
+                <td>{{ event.endDate | date: 'mediumDate' }}</td>
+                <td>
+                    <p-tag [value]="event.status" [severity]="getStatusSeverity(event.status)"></p-tag>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center">{{ 'availability.noEventsFound' | translate }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Block Availability Dialog -->
+<p-dialog
+    [(visible)]="blockDialog"
+    [header]="'availability.blockAvailability' | translate"
+    [modal]="true"
+    [style]="{width: '600px'}"
+    [draggable]="false"
+    [resizable]="false"
+>
+    <div class="grid">
+        <div class="col-12">
+            <label for="inventoryType" class="block mb-2">{{ 'availability.inventoryType' | translate }} *</label>
+            <p-select
+                [(ngModel)]="blockRequest.inventoryType"
+                [options]="inventoryTypes"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'availability.selectType' | translate"
+                (onChange)="onInventoryTypeChange()"
+                class="w-full"
+            />
+        </div>
+
+        <div class="col-12" *ngIf="blockRequest.inventoryType">
+            <label for="inventoryId" class="block mb-2">{{ 'availability.inventoryItem' | translate }} *</label>
+            <p-select
+                [(ngModel)]="blockRequest.inventoryId"
+                [options]="inventoryItems"
+                optionLabel="label"
+                optionValue="value"
+                [placeholder]="'availability.selectItem' | translate"
+                [loading]="loading"
+                class="w-full"
+            />
+        </div>
+
+        <div class="col-12">
+            <label for="dateRange" class="block mb-2">{{ 'availability.dateRange' | translate }} *</label>
+            <p-datePicker
+                [(ngModel)]="selectedDateRange"
+                selectionMode="range"
+                [readonlyInput]="true"
+                [iconDisplay]="'input'"
+                dateFormat="yy-mm-dd"
+                (onSelect)="onDateRangeSelect($event)"
+                class="w-full"
+            />
+        </div>
+
+        <div class="col-12">
+            <label for="reason" class="block mb-2">{{ 'availability.reason' | translate }} *</label>
+            <input
+                pInputText
+                id="reason"
+                [(ngModel)]="blockRequest.reason"
+                [placeholder]="'availability.reasonPlaceholder' | translate"
+                class="w-full"
+            />
+        </div>
+
+        <div class="col-12">
+            <label for="notes" class="block mb-2">{{ 'availability.notes' | translate }}</label>
+            <textarea
+                pTextarea
+                id="notes"
+                [(ngModel)]="blockRequest.notes"
+                rows="3"
+                class="w-full"
+            ></textarea>
+        </div>
+    </div>
+
+    <ng-template pTemplate="footer">
+        <p-button
+            [label]="'common.cancel' | translate"
+            icon="pi pi-times"
+            severity="secondary"
+            [outlined]="true"
+            (click)="blockDialog = false"
+        />
+        <p-button
+            [label]="'common.save' | translate"
+            icon="pi pi-check"
+            (click)="createBlock()"
+            [loading]="loading"
+        />
+    </ng-template>
+</p-dialog>

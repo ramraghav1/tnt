@@ -1,0 +1,365 @@
+<p-toast></p-toast>
+
+<!-- LOADING STATE -->
+<div class="grid grid-cols-12 gap-6" *ngIf="loading && opsLoading">
+    <div class="col-span-12 md:col-span-6 xl:col-span-4" *ngFor="let s of [1,2,3]">
+        <div class="card mb-0">
+            <p-skeleton height="100px" borderRadius="12px"></p-skeleton>
+        </div>
+    </div>
+    <div class="col-span-12 md:col-span-6 xl:col-span-4" *ngFor="let s of [4,5,6]">
+        <div class="card mb-0">
+            <p-skeleton height="100px" borderRadius="12px"></p-skeleton>
+        </div>
+    </div>
+    <div class="col-span-12 xl:col-span-8">
+        <div class="card"><p-skeleton height="320px" borderRadius="12px"></p-skeleton></div>
+    </div>
+    <div class="col-span-12 xl:col-span-4">
+        <div class="card"><p-skeleton height="320px" borderRadius="12px"></p-skeleton></div>
+    </div>
+</div>
+
+<!-- MAIN DASHBOARD -->
+<div *ngIf="!(loading && opsLoading)">
+
+    <!-- ═══════ SECTION 1: KPI Cards (3 columns x 2 rows) ═══════ -->
+    <div class="grid grid-cols-12 gap-6 mb-6" *ngIf="opsStats">
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-blue-100 dark:bg-blue-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-map-marker text-blue-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">Today's Arrivals</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">{{ opsStats.todayArrivals }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-users mr-1"></i>Travelers returning today</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-green-100 dark:bg-green-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-compass text-green-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">Active Treks</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">{{ opsStats.activeTreks }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-check-circle mr-1"></i>Currently ongoing</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-orange-100 dark:bg-orange-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-wallet text-orange-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">Pending Payments</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">{{ opsStats.pendingPayments }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-clock mr-1"></i>Awaiting payment</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-purple-100 dark:bg-purple-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-inbox text-purple-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">New Inquiries</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">{{ opsStats.newInquiries }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-calendar mr-1"></i>Last 7 days</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-cyan-100 dark:bg-cyan-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-chart-line text-cyan-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">Revenue Today</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">NPR {{ formatCurrency(opsStats.revenueToday) }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-check mr-1"></i>Payments received</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-span-12 md:col-span-6 xl:col-span-4">
+            <div class="card mb-0 h-full">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center justify-center rounded-xl bg-teal-100 dark:bg-teal-400/10" style="width: 3rem; height: 3rem">
+                        <i class="pi pi-car text-teal-500 text-2xl!"></i>
+                    </div>
+                    <div class="flex-1">
+                        <span class="block text-muted-color text-sm font-medium">Vehicles Assigned</span>
+                        <div class="text-surface-900 dark:text-surface-0 font-bold text-2xl mt-1">{{ opsStats.vehiclesAssigned }}</div>
+                    </div>
+                </div>
+                <div class="mt-3 pt-3 border-t border-surface-200 dark:border-surface-700">
+                    <span class="text-muted-color text-xs"><i class="pi pi-directions mr-1"></i>In use today</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SECTION 2: Charts + Today's Operations ═══════ -->
+    <div class="grid grid-cols-12 gap-6 mb-6">
+        <!-- Left: Bar Chart -->
+        <div class="col-span-12 xl:col-span-8" *ngIf="stats">
+            <div class="card mb-0 h-full">
+                <div class="flex justify-between items-center mb-6">
+                    <div class="font-semibold text-xl">{{ 'booking.tntDashboard.bookingTrend' | translate }}</div>
+                </div>
+                <p-chart type="bar" [data]="bookingChartData" [options]="bookingChartOptions" class="h-80" />
+            </div>
+        </div>
+
+        <!-- Right: Today's Operations -->
+        <div class="col-span-12 xl:col-span-4" *ngIf="opsStats">
+            <div class="card mb-0 h-full">
+                <div class="flex justify-between items-center mb-4">
+                    <div class="font-semibold text-xl">Today's Operations</div>
+                    <p-tag [value]="opsStats.todayOperations.length + ' tasks'" severity="info" [rounded]="true" />
+                </div>
+
+                <div *ngIf="opsStats.todayOperations.length === 0" class="flex flex-col items-center justify-center py-16 text-muted-color">
+                    <i class="pi pi-check-circle text-5xl mb-3 text-green-400"></i>
+                    <p class="font-medium text-lg">All clear!</p>
+                    <p class="text-sm">No pending operations today</p>
+                </div>
+
+                <div class="flex flex-col gap-2" *ngIf="opsStats.todayOperations.length > 0" style="max-height: 360px; overflow-y: auto">
+                    <div *ngFor="let op of opsStats.todayOperations"
+                         class="flex items-start gap-3 p-3 rounded-xl border border-surface-200 dark:border-surface-700 hover:bg-surface-50 dark:hover:bg-surface-800 transition-all duration-200 cursor-default">
+                        <div class="flex items-center justify-center rounded-full shrink-0" [ngClass]="getOperationIconBg(op.type)" style="width: 2.5rem; height: 2.5rem">
+                            <i class="pi" [ngClass]="[op.icon, getOperationIconColor(op.type)]"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-surface-900 dark:text-surface-0 text-sm leading-tight">{{ op.title }}</div>
+                            <div class="text-muted-color text-xs mt-1" *ngIf="op.details">{{ op.details }}</div>
+                        </div>
+                        <span class="text-xs font-medium text-muted-color shrink-0 bg-surface-100 dark:bg-surface-700 px-2 py-1 rounded-md">{{ op.time }}</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SECTION 3: Revenue Line Chart + Doughnut Charts ═══════ -->
+    <div class="grid grid-cols-12 gap-6 mb-6">
+        <!-- Revenue Trend -->
+        <div class="col-span-12 xl:col-span-6" *ngIf="stats">
+            <div class="card mb-0 h-full">
+                <div class="font-semibold text-xl mb-6">{{ 'booking.tntDashboard.revenueTrend' | translate }}</div>
+                <p-chart type="line" [data]="revenueChartData" [options]="revenueChartOptions" class="h-72" />
+            </div>
+        </div>
+
+        <!-- Booking & Payment Status Side-by-Side -->
+        <div class="col-span-12 md:col-span-6 xl:col-span-3" *ngIf="stats">
+            <div class="card mb-0 h-full">
+                <div class="font-semibold text-lg mb-4">{{ 'booking.tntDashboard.bookingStatus' | translate }}</div>
+                <p-chart type="doughnut" [data]="statusChartData" [options]="statusChartOptions" class="h-56" />
+            </div>
+        </div>
+        <div class="col-span-12 md:col-span-6 xl:col-span-3" *ngIf="stats">
+            <div class="card mb-0 h-full">
+                <div class="font-semibold text-lg mb-4">{{ 'booking.tntDashboard.paymentStatus' | translate }}</div>
+                <p-chart type="doughnut" [data]="paymentChartData" [options]="paymentChartOptions" class="h-56" />
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SECTION 4: Upcoming Treks + Alerts ═══════ -->
+    <div class="grid grid-cols-12 gap-6 mb-6">
+        <!-- Upcoming Treks -->
+        <div class="col-span-12 xl:col-span-7" *ngIf="opsStats">
+            <div class="card mb-0 h-full">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="font-semibold text-xl">Upcoming Treks & Tours</div>
+                    <p-button label="View All" icon="pi pi-arrow-right" iconPos="right" [text]="true" size="small" routerLink="/departure-list" />
+                </div>
+
+                <div *ngIf="opsStats.upcomingTreks.length === 0" class="flex flex-col items-center py-12 text-muted-color">
+                    <i class="pi pi-map text-5xl mb-3 text-surface-300"></i>
+                    <p class="font-medium">No upcoming treks</p>
+                    <p class="text-sm">Nothing scheduled for the next 7 days</p>
+                </div>
+
+                <div class="flex flex-col gap-3" *ngIf="opsStats.upcomingTreks.length > 0">
+                    <div *ngFor="let trek of opsStats.upcomingTreks"
+                         class="flex items-center gap-4 p-4 rounded-xl bg-surface-50 dark:bg-surface-800 border border-surface-100 dark:border-surface-700 hover:shadow-sm transition-shadow">
+                        <div class="flex items-center justify-center rounded-lg bg-primary/10 shrink-0" style="width: 2.5rem; height: 2.5rem">
+                            <i class="pi pi-compass text-primary"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-surface-900 dark:text-surface-0 truncate">{{ trek.itineraryTitle }}</div>
+                            <div class="flex items-center gap-4 text-muted-color text-xs mt-1.5">
+                                <span><i class="pi pi-calendar mr-1"></i>{{ formatDepartureDate(trek.departureDate) }}</span>
+                                <span *ngIf="trek.guideName"><i class="pi pi-user mr-1"></i>{{ trek.guideName }}</span>
+                            </div>
+                        </div>
+                        <div class="flex flex-col items-end gap-1.5 shrink-0">
+                            <p-tag [value]="trek.status" [severity]="getDepartureStatusSeverity(trek.status)" [rounded]="true" />
+                            <div class="flex items-center gap-2">
+                                <div class="w-16 h-2 rounded-full bg-surface-200 dark:bg-surface-600">
+                                    <div class="h-full rounded-full bg-primary transition-all"
+                                         [style.width.%]="trek.capacity > 0 ? (trek.bookedCount / trek.capacity) * 100 : 0">
+                                    </div>
+                                </div>
+                                <span class="text-xs font-medium text-muted-color">{{ trek.bookedCount }}/{{ trek.capacity }}</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Alerts -->
+        <div class="col-span-12 xl:col-span-5" *ngIf="opsStats">
+            <div class="card mb-0 h-full">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="font-semibold text-xl">Alerts & Notifications</div>
+                    <p-tag *ngIf="opsStats.alerts.length > 0" [value]="opsStats.alerts.length + ' active'" severity="danger" [rounded]="true" />
+                </div>
+
+                <div *ngIf="opsStats.alerts.length === 0" class="flex flex-col items-center py-12 text-muted-color">
+                    <i class="pi pi-check-circle text-5xl mb-3 text-green-400"></i>
+                    <p class="font-medium text-lg">No alerts</p>
+                    <p class="text-sm">Everything is on track</p>
+                </div>
+
+                <div class="flex flex-col gap-3" *ngIf="opsStats.alerts.length > 0">
+                    <div *ngFor="let alert of opsStats.alerts"
+                         class="flex items-start gap-3 p-4 rounded-xl border"
+                         [ngClass]="getAlertSeverityClass(alert.severity)">
+                        <div class="flex items-center justify-center shrink-0 rounded-lg" style="width: 2.25rem; height: 2.25rem"
+                             [ngClass]="getAlertIconBgClass(alert.severity)">
+                            <i class="pi" [ngClass]="[alert.icon, getAlertIconClass(alert.severity)]"></i>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-semibold text-surface-900 dark:text-surface-0 text-sm">{{ alert.title }}</div>
+                            <div class="text-muted-color text-xs mt-1" *ngIf="alert.detail">{{ alert.detail }}</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SECTION 5: Top Itineraries + Departure Status ═══════ -->
+    <div class="grid grid-cols-12 gap-6 mb-6">
+        <!-- Top Itineraries -->
+        <div class="col-span-12 xl:col-span-7" *ngIf="stats">
+            <div class="card mb-0 h-full">
+                <div class="font-semibold text-xl mb-5">{{ 'booking.tntDashboard.topItineraries' | translate }}</div>
+                <div class="flex flex-col gap-4">
+                    <div *ngFor="let item of stats.topItineraries; let i = index"
+                         class="flex items-center gap-4 p-3 rounded-xl hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors">
+                        <div class="flex items-center justify-center bg-primary/10 rounded-lg font-bold text-primary" style="width: 2.25rem; height: 2.25rem">
+                            {{ i + 1 }}
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="font-medium text-surface-900 dark:text-surface-0 truncate">{{ item.title }}</div>
+                            <div class="text-muted-color text-xs mt-0.5">{{ item.bookingCount }} {{ item.bookingCount !== 1 ? ('booking.tntDashboard.bookings' | translate) : ('booking.tntDashboard.booking' | translate) }}</div>
+                        </div>
+                        <div class="flex items-center gap-3 shrink-0">
+                            <div class="w-24 h-2 rounded-full bg-surface-200 dark:bg-surface-600">
+                                <div class="h-full rounded-full bg-primary transition-all" [style.width.%]="stats.topItineraries.length ? (item.bookingCount / stats.topItineraries[0].bookingCount) * 100 : 0"></div>
+                            </div>
+                            <span class="text-xs font-semibold text-muted-color w-6 text-right">{{ item.bookingCount }}</span>
+                        </div>
+                    </div>
+                    <div *ngIf="stats.topItineraries.length === 0" class="flex flex-col items-center py-12 text-muted-color">
+                        <i class="pi pi-map-marker text-5xl mb-3 text-surface-300"></i>
+                        <p>{{ 'booking.tntDashboard.noItineraries' | translate }}</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Departure Status -->
+        <div class="col-span-12 xl:col-span-5">
+            <div class="card mb-0 h-full">
+                <div class="font-semibold text-xl mb-5">Departure Status</div>
+                <div *ngIf="departuresLoading" class="flex items-center justify-center py-12">
+                    <p-skeleton height="220px" width="220px" borderRadius="50%"></p-skeleton>
+                </div>
+                <ng-container *ngIf="!departuresLoading">
+                    <p-chart *ngIf="departures.length > 0"
+                        type="doughnut"
+                        [data]="departureStatusChartData"
+                        [options]="departureStatusChartOptions"
+                        class="h-64" />
+                    <div *ngIf="departures.length === 0" class="flex flex-col items-center py-12 text-muted-color">
+                        <i class="pi pi-map text-5xl mb-3 text-surface-300"></i>
+                        <p>No departures found</p>
+                    </div>
+                </ng-container>
+            </div>
+        </div>
+    </div>
+
+    <!-- ═══════ SECTION 6: Recent Bookings Table ═══════ -->
+    <div class="grid grid-cols-12 gap-6">
+        <div class="col-span-12" *ngIf="stats">
+            <div class="card mb-0">
+                <div class="flex justify-between items-center mb-5">
+                    <div class="font-semibold text-xl">{{ 'booking.tntDashboard.recentBookings' | translate }}</div>
+                    <p-button [label]="'booking.tntDashboard.viewAll' | translate" icon="pi pi-arrow-right" iconPos="right" [text]="true" size="small" routerLink="/my-bookings" />
+                </div>
+                <p-table [value]="stats.recentBookings" responsiveLayout="scroll" [rows]="5" styleClass="p-datatable-sm">
+                    <ng-template pTemplate="header">
+                        <tr>
+                            <th>{{ 'booking.tntDashboard.reference' | translate }}</th>
+                            <th pSortableColumn="templateTitle">{{ 'booking.tntDashboard.itinerary' | translate }} <p-sortIcon field="templateTitle" /></th>
+                            <th>{{ 'booking.tntDashboard.status' | translate }}</th>
+                            <th>{{ 'booking.tntDashboard.payment' | translate }}</th>
+                            <th pSortableColumn="totalAmount">{{ 'booking.tntDashboard.amount' | translate }} <p-sortIcon field="totalAmount" /></th>
+                            <th>{{ 'booking.tntDashboard.date' | translate }}</th>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="body" let-b>
+                        <tr class="hover:bg-surface-50 dark:hover:bg-surface-800 transition-colors">
+                            <td><span class="font-mono font-semibold text-sm text-primary">{{ b.bookingReference }}</span></td>
+                            <td class="font-medium">{{ b.templateTitle }}</td>
+                            <td><p-tag [value]="b.status" [severity]="getStatusSeverity(b.status)" [rounded]="true" /></td>
+                            <td><p-tag [value]="b.paymentStatus" [severity]="getPaymentSeverity(b.paymentStatus)" [rounded]="true" /></td>
+                            <td class="font-semibold">NPR {{ formatCurrency(b.totalAmount) }}</td>
+                            <td class="text-muted-color">{{ formatDate(b.createdAt) }}</td>
+                        </tr>
+                    </ng-template>
+                    <ng-template pTemplate="emptymessage">
+                        <tr><td colspan="6" class="text-center py-8 text-muted-color">{{ 'booking.tntDashboard.noRecentBookings' | translate }}</td></tr>
+                    </ng-template>
+                </p-table>
+            </div>
+        </div>
+    </div>
+</div>

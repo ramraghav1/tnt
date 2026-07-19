@@ -1,0 +1,186 @@
+<p-toast></p-toast>
+
+<div class="card">
+    <p-toolbar styleClass="mb-4">
+        <ng-template #start>
+            <div class="flex items-center gap-3">
+                <button pButton icon="pi pi-arrow-left" class="p-button-text" (click)="goBack()"></button>
+                <span class="font-semibold text-xl">Statement of Account</span>
+            </div>
+        </ng-template>
+        <ng-template #end>
+            <div class="flex gap-2">
+                <button pButton label="Post Entry" icon="pi pi-plus" severity="success" (click)="openPostEntry()"></button>
+                <button pButton label="Print" icon="pi pi-print" severity="secondary" (click)="printStatement()"></button>
+            </div>
+        </ng-template>
+    </p-toolbar>
+
+    <!-- Account Summary Cards -->
+    @if (statement) {
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4 mb-4">
+        <div class="surface-card shadow-sm rounded-lg p-4 border border-surface">
+            <div class="text-color-secondary text-sm mb-1">Agent</div>
+            <div class="font-semibold text-lg">{{ statement.agentName }}</div>
+            <div class="text-sm text-color-secondary">{{ statement.accountName }} &middot; {{ statement.accountNumber }}</div>
+        </div>
+        <div class="surface-card shadow-sm rounded-lg p-4 border border-surface">
+            <div class="text-color-secondary text-sm mb-1">Opening Balance</div>
+            <div class="font-semibold text-lg">{{ statement.currencyCode }} {{ statement.openingBalance | number:'1.2-2' }}</div>
+        </div>
+        <div class="surface-card shadow-sm rounded-lg p-4 border border-surface">
+            <div class="text-color-secondary text-sm mb-1">Total Debit</div>
+            <div class="font-semibold text-lg text-red-500">{{ statement.currencyCode }} {{ statement.totalDebit | number:'1.2-2' }}</div>
+        </div>
+        <div class="surface-card shadow-sm rounded-lg p-4 border border-surface">
+            <div class="text-color-secondary text-sm mb-1">Total Credit</div>
+            <div class="font-semibold text-lg text-green-500">{{ statement.currencyCode }} {{ statement.totalCredit | number:'1.2-2' }}</div>
+        </div>
+        <div class="surface-card shadow-sm rounded-lg p-4 border border-surface">
+            <div class="text-color-secondary text-sm mb-1">Closing Balance</div>
+            <div class="font-bold text-xl">{{ statement.currencyCode }} {{ statement.closingBalance | number:'1.2-2' }}</div>
+        </div>
+    </div>
+    }
+
+    <!-- Date Filter -->
+    <div class="flex items-end gap-3 mb-4 flex-wrap">
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold">From Date</label>
+            <p-datepicker [(ngModel)]="fromDate" [showIcon]="true" dateFormat="yy-mm-dd" placeholder="From" [appendTo]="'body'"></p-datepicker>
+        </div>
+        <div class="flex flex-col gap-1">
+            <label class="text-sm font-semibold">To Date</label>
+            <p-datepicker [(ngModel)]="toDate" [showIcon]="true" dateFormat="yy-mm-dd" placeholder="To" [appendTo]="'body'"></p-datepicker>
+        </div>
+        <button pButton label="Apply" icon="pi pi-filter" (click)="applyFilter()"></button>
+        <button pButton label="Clear" icon="pi pi-filter-slash" class="p-button-outlined" (click)="clearFilter()"></button>
+    </div>
+
+    <!-- Ledger Table -->
+    <p-table
+        [value]="statement?.entries || []"
+        [paginator]="true"
+        [rows]="20"
+        [loading]="loading"
+        [showGridlines]="true"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+    >
+        <ng-template pTemplate="header">
+            <tr>
+                <th>Date</th>
+                <th>Description</th>
+                <th>Reference</th>
+                <th>Type</th>
+                <th class="text-right">Debit</th>
+                <th class="text-right">Credit</th>
+                <th class="text-right">Balance</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-entry>
+            <tr>
+                <td>{{ entry.createdAt | date: 'medium' }}</td>
+                <td>{{ entry.description || '-' }}</td>
+                <td>
+                    <span class="text-sm">{{ entry.referenceType }}</span>
+                    @if (entry.referenceId) {
+                    <span class="text-color-secondary text-sm"> #{{ entry.referenceId }}</span>
+                    }
+                </td>
+                <td>
+                    <p-tag
+                        [value]="entry.transactionType"
+                        [severity]="entry.transactionType === 'CREDIT' ? 'success' : 'danger'"
+                    ></p-tag>
+                </td>
+                <td class="text-right font-semibold text-red-500">
+                    {{ entry.transactionType === 'DEBIT' ? (entry.amount | number:'1.2-2') : '' }}
+                </td>
+                <td class="text-right font-semibold text-green-500">
+                    {{ entry.transactionType === 'CREDIT' ? (entry.amount | number:'1.2-2') : '' }}
+                </td>
+                <td class="text-right font-bold">{{ entry.balanceAfter | number:'1.2-2' }}</td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-book text-4xl"></i>
+                        <span>No ledger entries found for this period.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- Post Entry Dialog -->
+<p-dialog
+    [(visible)]="postDialogVisible"
+    header="Post Ledger Entry"
+    [modal]="true"
+    [style]="{ width: '550px' }"
+    [closable]="true"
+>
+    <p-fluid>
+        <div class="flex flex-col gap-4 mt-2">
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="txnType" class="font-semibold">Transaction Type *</label>
+                    <p-select
+                        id="txnType"
+                        [options]="transactionTypes"
+                        [(ngModel)]="newEntry.transactionType"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select Type"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="refType" class="font-semibold">Reference Type *</label>
+                    <p-select
+                        id="refType"
+                        [options]="referenceTypes"
+                        [(ngModel)]="newEntry.referenceType"
+                        optionLabel="label"
+                        optionValue="value"
+                        placeholder="Select Ref Type"
+                        [appendTo]="'body'"
+                    ></p-select>
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="amount" class="font-semibold">Amount *</label>
+                <p-inputNumber id="amount" [(ngModel)]="newEntry.amount" [minFractionDigits]="2" [maxFractionDigits]="2" mode="decimal" placeholder="0.00"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="refId" class="font-semibold">Reference ID</label>
+                <input pInputText id="refId" [(ngModel)]="newEntry.referenceId" placeholder="Transaction ID, receipt #, etc." />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="description" class="font-semibold">Description</label>
+                <input pInputText id="description" [(ngModel)]="newEntry.description" placeholder="Description of entry" />
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="createdBy" class="font-semibold">Posted By</label>
+                <input pInputText id="createdBy" [(ngModel)]="newEntry.createdBy" placeholder="Username" />
+            </div>
+        </div>
+    </p-fluid>
+
+    <ng-template pTemplate="footer">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-text" (click)="postDialogVisible = false"></button>
+        <button pButton label="Post" icon="pi pi-check" (click)="postEntry()"
+            [disabled]="!newEntry.transactionType || !newEntry.referenceType || !newEntry.amount">
+        </button>
+    </ng-template>
+</p-dialog>

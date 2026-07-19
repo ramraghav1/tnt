@@ -1,0 +1,77 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <div class="flex justify-between items-center mb-4">
+        <div class="font-semibold text-xl">{{ 'inventory.hotels' | translate }}</div>
+        <button pButton [label]="'inventory.addHotel' | translate" icon="pi pi-plus" (click)="addNew()"></button>
+    </div>
+
+    <p-table
+        #dt
+        [value]="hotels"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [globalFilterFields]="['name', 'location', 'category']"
+        responsiveLayout="scroll"
+        [rowsPerPageOptions]="[10, 20, 50]"
+        [showGridlines]="true"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-column sm:flex-row">
+                <button pButton icon="pi pi-filter-slash" severity="secondary" [outlined]="true" (click)="clear(dt)" [label]="'common.clear' | translate"></button>
+                <p-iconfield iconPosition="left" class="ml-auto">
+                    <p-inputicon>
+                        <i class="pi pi-search"></i>
+                    </p-inputicon>
+                    <input pInputText type="text" (input)="onGlobalFilter(dt, $event)" [placeholder]="'inventory.searchHotels' | translate" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="name">{{ 'inventory.name' | translate }} <p-sortIcon field="name"></p-sortIcon></th>
+                <th pSortableColumn="location">{{ 'inventory.location' | translate }} <p-sortIcon field="location"></p-sortIcon></th>
+                <th pSortableColumn="category">{{ 'inventory.category' | translate }} <p-sortIcon field="category"></p-sortIcon></th>
+                <th pSortableColumn="starRating">{{ 'inventory.stars' | translate }} <p-sortIcon field="starRating"></p-sortIcon></th>
+                <th>{{ 'inventory.rooms' | translate }}</th>
+                <th pSortableColumn="isActive">{{ 'inventory.status' | translate }} <p-sortIcon field="isActive"></p-sortIcon></th>
+                <th>{{ 'inventory.actions' | translate }}</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-hotel>
+            <tr>
+                <td>
+                    <strong>{{ hotel.name }}</strong><br/>
+                    <small class="text-gray-500">{{ hotel.phoneNumber }}</small>
+                </td>
+                <td>{{ hotel.location }}</td>
+                <td>{{ hotel.category }}</td>
+                <td>{{ getStarRating(hotel.starRating) }}</td>
+                <td>{{ hotel.rooms?.length || 0 }} {{ 'inventory.roomTypes' | translate }}</td>
+                <td>
+                    <p-tag 
+                        [value]="hotel.isActive ? ('inventory.active' | translate) : ('inventory.inactive' | translate)" 
+                        [severity]="getStatusSeverity(hotel.isActive)"
+                    ></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-outlined p-button-info" (click)="editHotel(hotel)" [pTooltip]="'inventory.edit' | translate"></button>
+                        <button *ngIf="hotel.isActive" pButton icon="pi pi-trash" class="p-button-rounded p-button-outlined p-button-danger" (click)="deleteHotel(hotel)" [pTooltip]="'inventory.delete' | translate"></button>
+                        <button *ngIf="!hotel.isActive" pButton icon="pi pi-check" class="p-button-rounded p-button-outlined p-button-success" (click)="activateHotel(hotel)" [pTooltip]="'inventory.activate' | translate"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="7" class="text-center">{{ 'inventory.noHotelsFound' | translate }}</td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>

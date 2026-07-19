@@ -1,0 +1,183 @@
+:host { display: block; }
+
+.bv-wrap { /* no max-width — uses standard page padding from layout */ }
+
+/* ── Section Titles ── */
+.bv-section-title {
+    display: flex; align-items: center; gap: .5rem;
+    font-weight: 700; font-size: .975rem;
+    color: var(--text-color);
+    margin-bottom: 1rem;
+    padding-bottom: .6rem;
+    border-bottom: 1px solid var(--surface-border);
+}
+.bv-section-title i { color: var(--primary-color); }
+
+.bv-sub-title {
+    display: flex; align-items: center; gap: .4rem;
+    font-weight: 600; font-size: .875rem;
+    color: var(--text-color-secondary);
+    margin-bottom: .6rem;
+    margin-top: .25rem;
+}
+.bv-sub-title i { color: var(--primary-color); font-size: .85rem; }
+
+.bv-badge {
+    margin-left: auto;
+    background: color-mix(in srgb, var(--primary-color) 18%, var(--surface-card));
+    color: var(--primary-color);
+    font-size: .7rem; font-weight: 600;
+    padding: .15rem .6rem; border-radius: 999px;
+    min-width: 1.5rem; text-align: center;
+}
+
+/* ── Header ── */
+.bv-ref {
+    font-size: 1.25rem; font-weight: 800;
+    color: var(--primary-color); font-family: monospace;
+    letter-spacing: .05em;
+}
+.bv-itinerary-name { font-size: .95rem; color: var(--text-color-secondary); }
+
+/* ── Two-column layout ── */
+.bv-row-2 {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: 1rem;
+    align-items: start;
+}
+@media (max-width: 860px) {
+    .bv-row-2 { grid-template-columns: 1fr; }
+}
+
+/* ── Info rows ── */
+.bv-info-grid { display: flex; flex-direction: column; gap: .45rem; }
+.bv-row { display: flex; gap: .75rem; font-size: .88rem; line-height: 1.5; }
+.bv-lbl {
+    min-width: 140px; flex-shrink: 0;
+    color: var(--text-color-secondary); font-weight: 500;
+    display: flex; align-items: flex-start; gap: .35rem;
+}
+.bv-lbl i { font-size: .78rem; margin-top: .2rem; color: var(--primary-color); }
+.bv-val { color: var(--text-color); flex: 1; }
+.mono { font-family: monospace; }
+
+/* ── Finance card ── */
+.bv-finance-card { border-top: 3px solid var(--primary-color); }
+.bv-finance-rows { display: flex; flex-direction: column; }
+.bv-fin-row {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: .5rem 0; font-size: .92rem;
+    border-bottom: 1px solid var(--surface-border);
+}
+.bv-fin-row:last-child { border-bottom: none; }
+.bv-fin-total { font-weight: 700; font-size: 1rem; }
+.bv-fin-paid  { color: var(--p-green-600); }
+.bv-fin-balance { color: var(--p-red-500); font-weight: 600; }
+.bv-fin-settled { color: var(--p-green-600); }
+.bv-pay-status { }
+
+/* ── Payment table ── */
+.bv-pay-table { width: 100%; border-collapse: collapse; font-size: .83rem; }
+.bv-pay-table th {
+    text-align: left; padding: .4rem .6rem;
+    background: var(--surface-hover); font-weight: 600;
+    color: var(--text-color-secondary); font-size: .78rem;
+    border-bottom: 1px solid var(--surface-border);
+}
+.bv-pay-table td { padding: .4rem .6rem; border-bottom: 1px solid var(--surface-border); color: var(--text-color); }
+.bv-pay-table tr:last-child td { border-bottom: none; }
+
+/* ── Travellers ── */
+.bv-traveler-grid { display: flex; flex-direction: column; gap: .5rem; }
+.bv-traveler-card {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .75rem 1rem;
+    background: var(--surface-hover);
+    border: 1px solid var(--surface-border); border-radius: 8px;
+}
+.bv-t-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 26px; height: 26px; border-radius: 50%;
+    background: var(--primary-color); color: var(--primary-contrast-color);
+    font-size: .78rem; font-weight: 700; flex-shrink: 0; margin-top: 2px;
+}
+.bv-t-info { flex: 1; }
+.bv-t-name { font-weight: 700; font-size: .92rem; color: var(--text-color); margin-bottom: .25rem; }
+.bv-t-meta {
+    display: flex; flex-wrap: wrap; gap: .75rem;
+    font-size: .8rem; color: var(--text-color-secondary);
+}
+.bv-t-meta i { font-size: .72rem; margin-right: .2rem; }
+.bv-t-type { color: var(--primary-color); font-weight: 600; }
+
+/* ── Inventory ── */
+.bv-inventory-grid { display: flex; flex-direction: column; gap: 1rem; }
+.bv-inv-group { }
+.bv-inv-group-title {
+    font-weight: 700; font-size: .85rem;
+    color: var(--text-color-secondary);
+    display: flex; align-items: center; gap: .4rem;
+    margin-bottom: .5rem;
+    padding-bottom: .35rem;
+    border-bottom: 1px dashed var(--surface-border);
+}
+.bv-inv-group-title i { color: var(--primary-color); }
+.bv-inv-item {
+    display: flex; flex-direction: column; gap: .2rem;
+    padding: .55rem .75rem;
+    background: var(--surface-hover);
+    border: 1px solid var(--surface-border); border-radius: 8px;
+    margin-bottom: .35rem;
+}
+.bv-inv-item:last-child { margin-bottom: 0; }
+.bv-inv-name { font-weight: 600; font-size: .9rem; color: var(--text-color); }
+.bv-inv-meta {
+    display: flex; flex-wrap: wrap; gap: .65rem;
+    font-size: .8rem; color: var(--text-color-secondary);
+    margin-top: .15rem;
+}
+.bv-inv-meta i { font-size: .72rem; margin-right: .2rem; }
+.bv-inv-notes { color: var(--text-color-secondary); font-style: italic; }
+
+/* ── Day Plan ── */
+.bv-day-list { display: flex; flex-direction: column; gap: .6rem; }
+.bv-day {
+    border: 1px solid var(--surface-border); border-radius: 8px; overflow: hidden;
+}
+.bv-day-header {
+    display: flex; align-items: flex-start; gap: .75rem;
+    padding: .75rem 1rem;
+    background: color-mix(in srgb, var(--primary-color) 8%, var(--surface-card));
+    border-bottom: 1px solid var(--surface-border);
+}
+.bv-day-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 2rem; height: 2rem; flex-shrink: 0;
+    background: var(--primary-color); color: var(--primary-contrast-color);
+    border-radius: 50%; font-weight: 700; font-size: .85rem;
+}
+.bv-day-head-info { flex: 1; }
+.bv-day-title { font-weight: 700; font-size: .9rem; color: var(--text-color); display: block; }
+.bv-day-sub {
+    display: flex; flex-wrap: wrap; gap: .6rem;
+    font-size: .78rem; color: var(--text-color-secondary); margin-top: .2rem;
+}
+.bv-day-sub i { font-size: .72rem; margin-right: .2rem; }
+.bv-day-body { padding: .75rem 1rem; }
+.bv-day-grid { display: flex; flex-direction: column; gap: .4rem; }
+
+/* ── Not found ── */
+.not-found-wrap {
+    display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; min-height: 50vh; padding: 2rem;
+}
+
+/* ── Print ── */
+@media print {
+    .print-hide { display: none !important; }
+    .card { border: 1px solid #ccc !important; box-shadow: none !important; break-inside: avoid; margin-bottom: .5rem; }
+    .bv-row-2 { grid-template-columns: 1fr 1fr; }
+    .bv-day { break-inside: avoid; }
+    .bv-wrap { padding: 0; }
+}

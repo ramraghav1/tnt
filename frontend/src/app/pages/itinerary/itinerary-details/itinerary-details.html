@@ -1,0 +1,196 @@
+<!-- Loading -->
+@if (loading) {
+  <div class="flex justify-center items-center py-12">
+    <p-progressSpinner strokeWidth="4" animationDuration="1s"></p-progressSpinner>
+  </div>
+}
+
+<!-- Main Content -->
+@if (!loading && itinerary) {
+  <div class="flex flex-col gap-6">
+
+    <!-- Header Card -->
+    <div class="card">
+      <div class="flex justify-between items-start mb-4">
+        <div>
+          <h2 class="text-2xl font-bold mb-2">{{ itinerary.title }}</h2>
+          <p class="text-sm" style="color: var(--p-surface-500);">{{ itinerary.description || 'No description provided' }}</p>
+        </div>
+        <div class="flex gap-2">
+          <p-button label="Send Proposal" icon="pi pi-send" severity="success" [outlined]="true" size="small" (click)="goSendProposal()"></p-button>
+          <p-button label="Edit" icon="pi pi-pencil" severity="info" [outlined]="true" size="small" (click)="goEdit()"></p-button>
+          <p-button label="Back" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" size="small" (click)="goBack()"></p-button>
+        </div>
+      </div>
+      <div class="flex gap-3 flex-wrap">
+        <p-tag icon="pi pi-calendar" [value]="itinerary.durationDays + ' Days'" severity="info"></p-tag>
+        <p-tag icon="pi pi-chart-line" [value]="itinerary.difficultyLevel || 'Not Set'" [severity]="getDifficultySeverity(itinerary.difficultyLevel)"></p-tag>
+        @if (getPricingModeLabel()) {
+          <p-tag icon="pi pi-money-bill" [value]="getPricingModeLabel()" severity="secondary"></p-tag>
+        }
+        @if (getGrandTotal() > 0) {
+          <p-tag icon="pi pi-wallet" [value]="'Rs. ' + getGrandTotal() + ' / person'" severity="warn"></p-tag>
+        }
+      </div>
+    </div>
+
+    <!-- Days Section -->
+    <div class="card">
+      <div class="flex justify-between items-center mb-4">
+        <div class="font-semibold text-xl">Daily Plan</div>
+        @if (itinerary.days.length > 1) {
+          <div class="flex gap-2">
+            <p-button label="Expand All" (click)="expandAll()" icon="pi pi-angle-double-down" severity="info" [outlined]="true" size="small"></p-button>
+            <p-button label="Collapse All" (click)="collapseAll()" icon="pi pi-angle-double-up" severity="info" [outlined]="true" size="small"></p-button>
+          </div>
+        }
+      </div>
+
+      <div class="flex flex-col gap-4">
+        @for (day of itinerary.days; track day.dayNumber; let i = $index) {
+          <div class="day-card" [attr.data-day-index]="i">
+            <!-- Day Header -->
+            <div class="day-header" (click)="toggleDay(i)">
+              <div class="flex items-center gap-3">
+                <span class="day-badge">{{ day.dayNumber }}</span>
+                <div>
+                  <span class="day-title">Day {{ day.dayNumber }}{{ day.title ? ': ' + day.title : '' }}</span>
+                  @if (day.location) {
+                    <span class="day-location"><i class="pi pi-map-marker"></i> {{ day.location }}</span>
+                  }
+                </div>
+              </div>
+              <div class="flex items-center gap-3">
+                @if (getDayTotal(day) > 0 && itinerary.pricingMode === 'DAILY_ACTIVITY') {
+                  <span class="day-cost-tag">Rs. {{ getDayTotal(day) }}</span>
+                }
+                @if (day.dailyCost > 0 && itinerary.pricingMode === 'DAILY') {
+                  <span class="day-cost-tag">Rs. {{ day.dailyCost }}</span>
+                }
+                <i class="pi" [class.pi-chevron-down]="collapsedDays[i]" [class.pi-chevron-up]="!collapsedDays[i]" style="color: var(--p-surface-500);"></i>
+              </div>
+            </div>
+
+            <!-- Day Content -->
+            @if (!collapsedDays[i]) {
+              <div class="day-body">
+                <!-- Description -->
+                @if (day.description) {
+                  <div class="day-description">
+                    <p class="m-0 text-sm" style="color: var(--text-color-secondary); white-space: pre-line;">{{ day.description }}</p>
+                  </div>
+                }
+
+                <!-- Info Grid -->
+                <div class="info-grid">
+                  @if (day.accommodation) {
+                    <div class="info-item">
+                      <div class="info-label"><i class="pi pi-building"></i> Accommodation</div>
+                      <div class="info-value">{{ day.accommodation }}</div>
+                    </div>
+                  }
+                  @if (day.transport) {
+                    <div class="info-item">
+                      <div class="info-label"><i class="pi pi-car"></i> Transport</div>
+                      <div class="info-value">{{ day.transport }}</div>
+                    </div>
+                  }
+                  <div class="info-item">
+                    <div class="info-label"><i class="pi pi-sun"></i> Meals</div>
+                    <div class="info-value">
+                      @if (getMeals(day).length > 0) {
+                        <div class="flex gap-2 flex-wrap">
+                          @for (meal of getMeals(day); track meal) {
+                            <span class="meal-chip">{{ meal }}</span>
+                          }
+                        </div>
+                      } @else {
+                        <span style="color: var(--p-surface-400);">None included</span>
+                      }
+                    </div>
+                  </div>
+                </div>
+
+                <!-- Activities -->
+                @if (day.activities && day.activities.length > 0) {
+                  <div class="section-block">
+                    <div class="section-label"><i class="pi pi-flag"></i> Activities</div>
+                    <div class="flex gap-2 flex-wrap">
+                      @for (activity of day.activities; track activity) {
+                        <span class="activity-chip">{{ activity }}</span>
+                      }
+                    </div>
+                  </div>
+                }
+
+                <!-- Costs -->
+                @if (itinerary.pricingMode === 'DAILY' && day.dailyCost > 0) {
+                  <div class="section-block">
+                    <div class="section-label"><i class="pi pi-wallet"></i> Day Cost</div>
+                    <div class="cost-list">
+                      <div class="cost-line cost-total-line">
+                        <span class="font-semibold">Day Total</span>
+                        <span class="font-bold" style="color: var(--p-primary-600);">Rs. {{ day.dailyCost }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+                @if (itinerary.pricingMode === 'DAILY_ACTIVITY' && day.costs && day.costs.length > 0) {
+                  <div class="section-block">
+                    <div class="section-label"><i class="pi pi-wallet"></i> Cost Breakdown</div>
+                    <div class="cost-list">
+                      @for (cost of day.costs; track $index) {
+                        <div class="cost-line">
+                          <div class="flex items-center gap-2">
+                            <span>{{ cost.name }}</span>
+                            <span class="cost-category">{{ cost.category }}</span>
+                          </div>
+                          <span class="cost-amount">Rs. {{ cost.price }}</span>
+                        </div>
+                      }
+                      <div class="cost-line cost-total-line">
+                        <span class="font-semibold">Day Total</span>
+                        <span class="font-bold" style="color: var(--p-primary-600);">Rs. {{ getDayTotal(day) }}</span>
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <!-- Grand Total Card -->
+    @if (getGrandTotal() > 0) {
+      <div class="grand-total-card">
+        <span class="font-semibold">
+          @if (itinerary.pricingMode === 'OVERALL') {
+            Overall Itinerary Price (per person)
+          } @else {
+            Estimated Total Cost (per person)
+          }
+        </span>
+        <span class="grand-total-amount">Rs. {{ getGrandTotal() }}</span>
+      </div>
+    }
+
+    <!-- Media Gallery Section -->
+    @if (itinerary.id) {
+      <div class="card">
+        <app-media-gallery [itineraryId]="itinerary.id" [editable]="true"></app-media-gallery>
+      </div>
+    }
+
+  </div>
+}
+
+<!-- Not Found -->
+@if (!loading && !itinerary) {
+  <div class="card text-center py-8">
+    <i class="pi pi-exclamation-circle text-4xl mb-3" style="color: var(--p-surface-400);"></i>
+    <p class="text-lg" style="color: var(--p-surface-500);">Itinerary not found</p>
+    <p-button label="Back to List" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (click)="goBack()" class="mt-4"></p-button>
+  </div>
+}

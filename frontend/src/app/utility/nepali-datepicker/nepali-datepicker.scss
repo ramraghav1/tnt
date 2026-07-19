@@ -1,0 +1,86 @@
+:host { display: block; width: 100%; }
+
+.nepali-datepicker-wrapper { display: flex; flex-direction: column; gap: 0.4rem; position: relative; }
+
+.date-mode-toggle { display: flex; align-items: center; gap: 0.4rem; }
+
+.mode-label {
+    font-size: 0.78rem; font-weight: 600; color: var(--p-surface-400); user-select: none;
+    &.active { color: var(--p-primary-500); }
+}
+
+.bs-picker { position: relative; }
+
+.bs-input-wrapper {
+    display: flex; align-items: center; border: 1px solid var(--p-inputtext-border-color);
+    border-radius: var(--p-inputtext-border-radius, 6px); padding: 0 var(--p-inputtext-padding-x, 0.75rem);
+    cursor: pointer; background: var(--p-inputtext-background, #fff); box-sizing: border-box;
+    &:hover { border-color: var(--p-inputtext-hover-border-color); }
+}
+
+.bs-input-icon { color: var(--p-surface-500); margin-right: 0.5rem; font-size: 1rem; flex-shrink: 0; }
+
+.bs-input {
+    border: none; outline: none; background: transparent; flex: 1; min-width: 0;
+    font-size: 1rem; color: var(--p-inputtext-color); cursor: pointer;
+    padding: var(--p-inputtext-padding-y, 0.5rem) 0; line-height: normal;
+    &::placeholder { color: var(--p-inputtext-placeholder-color); }
+}
+
+.bs-clear-icon { color: var(--p-surface-400); font-size: 0.8rem; cursor: pointer; padding: 0.2rem;
+    &:hover { color: var(--p-surface-600); }
+}
+
+.bs-calendar-dropdown {
+    position: absolute; top: 100%; left: 0; z-index: 1000; margin-top: 4px;
+    background: var(--p-surface-0, #fff); border: 1px solid var(--p-surface-200);
+    border-radius: 8px; box-shadow: 0 4px 16px rgba(0,0,0,0.1); width: 280px; padding: 0.5rem;
+    animation: calSlide 0.15s ease-out;
+}
+
+@keyframes calSlide { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+
+.bs-cal-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 0.6rem; }
+
+.bs-nav-btn {
+    display: flex; align-items: center; justify-content: center; width: 1.6rem; height: 1.6rem;
+    border: none; border-radius: 4px; background: transparent; color: var(--p-surface-600); cursor: pointer; font-size: 0.8rem;
+    &:hover { background: var(--p-surface-100); color: var(--p-primary-500); }
+}
+
+.bs-header-center { display: flex; align-items: center; gap: 0.4rem; }
+
+.bs-month-select, .bs-year-select {
+    border: 1px solid var(--p-surface-200); border-radius: 4px; padding: 0.2rem 0.3rem;
+    font-size: 0.75rem; font-weight: 600; color: var(--p-surface-700); background: var(--p-surface-0, #fff); cursor: pointer; outline: none;
+    &:focus { border-color: var(--p-primary-400); }
+}
+.bs-month-select { min-width: 110px; }
+.bs-year-select { min-width: 60px; }
+
+.bs-cal-days-header { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; margin-bottom: 0.3rem; }
+.bs-day-header { text-align: center; font-size: 0.65rem; font-weight: 700; color: var(--p-surface-500); text-transform: uppercase; padding: 0.2rem 0; }
+
+.bs-cal-body { display: flex; flex-direction: column; gap: 2px; }
+.bs-cal-week { display: grid; grid-template-columns: repeat(7,1fr); gap: 2px; }
+
+.bs-cal-cell {
+    display: flex; align-items: center; justify-content: center; width: 100%; height: 30px;
+    border: none; border-radius: 6px; background: transparent; font-size: 0.78rem;
+    color: var(--p-surface-800); cursor: pointer;
+    &:hover:not(.disabled):not(.other-month) { background: var(--p-primary-50); color: var(--p-primary-600); }
+    &.other-month { color: var(--p-surface-300); cursor: default; }
+    &.today { background: var(--p-primary-50); color: var(--p-primary-600); font-weight: 700; border: 1px solid var(--p-primary-200); }
+    &.selected { background: var(--p-primary-500) !important; color: #fff !important; font-weight: 700; }
+    &.disabled { color: var(--p-surface-300); cursor: not-allowed; opacity: 0.5; }
+}
+
+.bs-cal-footer { display: flex; justify-content: center; margin-top: 0.35rem; padding-top: 0.35rem; border-top: 1px solid var(--p-surface-100); }
+
+.bs-today-btn {
+    display: flex; align-items: center; gap: 0.3rem; border: none; background: transparent;
+    color: var(--p-primary-500); font-size: 0.75rem; font-weight: 600; cursor: pointer; padding: 0.25rem 0.6rem; border-radius: 4px;
+    &:hover { background: var(--p-primary-50); }
+}
+
+.converted-date-text { font-size: 0.76rem; color: var(--p-surface-500); padding-left: 0.25rem; }

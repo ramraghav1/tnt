@@ -1,0 +1,152 @@
+<p-toast />
+<p-confirmDialog />
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <button pButton icon="pi pi-arrow-left" class="mr-2" severity="secondary" (click)="goBackToAgents()" pTooltip="Back to Agents"></button>
+            <h5 class="m-0 mx-3">Branches — {{ agentName }}</h5>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New Branch" icon="pi pi-plus" severity="secondary" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="branches"
+        [rows]="10"
+        [paginator]="true"
+        [loading]="loading"
+        [globalFilterFields]="['branchName', 'branchCode', 'address', 'district', 'contactPerson']"
+        [rowHover]="true"
+        dataKey="id"
+        responsiveLayout="scroll"
+    >
+        <ng-template #caption>
+            <div class="flex items-center justify-between">
+                <span>Showing {{ branches.length }} branches</span>
+                <p-iconfield>
+                    <p-inputicon styleClass="pi pi-search" />
+                    <input #filterInput pInputText type="text" placeholder="Search..." (input)="onGlobalFilter(dt, $event)" />
+                </p-iconfield>
+            </div>
+        </ng-template>
+        <ng-template #header>
+            <tr>
+                <th pSortableColumn="branchName">Branch Name <p-sortIcon field="branchName" /></th>
+                <th pSortableColumn="branchCode">Code <p-sortIcon field="branchCode" /></th>
+                <th pSortableColumn="district">District <p-sortIcon field="district" /></th>
+                <th>Contact Person</th>
+                <th>Status</th>
+                <th style="width: 12rem">Actions</th>
+            </tr>
+        </ng-template>
+        <ng-template #body let-item>
+            <tr>
+                <td>{{ item.branchName }}</td>
+                <td>{{ item.branchCode }}</td>
+                <td>{{ item.district }}</td>
+                <td>{{ item.contactPerson }}</td>
+                <td><p-tag [value]="item.isActive ? 'Active' : 'Inactive'" [severity]="item.isActive ? 'success' : 'danger'" /></td>
+                <td>
+                    <button pButton icon="pi pi-eye" class="mr-1" rounded outlined severity="info" (click)="viewDetail(item)" pTooltip="View Detail"></button>
+                    <button pButton icon="pi pi-users" class="mr-1" rounded outlined severity="help" (click)="viewUsers(item)" pTooltip="Users"></button>
+                    <button pButton icon="pi pi-pencil" class="mr-1" rounded outlined severity="success" (click)="editItem(item)" pTooltip="Edit"></button>
+                    <button pButton icon="pi pi-trash" rounded outlined severity="danger" (click)="deleteItem(item)" pTooltip="Delete"></button>
+                </td>
+            </tr>
+        </ng-template>
+        <ng-template #emptymessage>
+            <tr><td colspan="6" class="text-center p-4">No branches found for this agent.</td></tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- View Detail Popup -->
+<p-dialog header="Branch Details" [(visible)]="detailDialogVisible" [modal]="true" [style]="{ width: '600px' }" [closable]="true">
+    @if (detailItem) {
+    <div class="grid grid-cols-2 gap-4 p-4">
+        <div><label class="font-semibold block mb-1">Branch Name</label><span>{{ detailItem.branchName }}</span></div>
+        <div><label class="font-semibold block mb-1">Branch Code</label><span>{{ detailItem.branchCode }}</span></div>
+        <div><label class="font-semibold block mb-1">Address</label><span>{{ detailItem.address }}</span></div>
+        <div><label class="font-semibold block mb-1">State</label><span>{{ detailItem.state }}</span></div>
+        <div><label class="font-semibold block mb-1">District</label><span>{{ detailItem.district }}</span></div>
+        <div><label class="font-semibold block mb-1">Local Level</label><span>{{ detailItem.locallevel }}</span></div>
+        <div><label class="font-semibold block mb-1">Ward Number</label><span>{{ detailItem.wardNumber }}</span></div>
+        <div><label class="font-semibold block mb-1">Zipcode</label><span>{{ detailItem.zipcode }}</span></div>
+        <div><label class="font-semibold block mb-1">Contact Person</label><span>{{ detailItem.contactPerson }}</span></div>
+        <div><label class="font-semibold block mb-1">Contact Email</label><span>{{ detailItem.contactEmail }}</span></div>
+        <div><label class="font-semibold block mb-1">Contact Phone</label><span>{{ detailItem.contactPhone }}</span></div>
+        <div><label class="font-semibold block mb-1">Status</label><p-tag [value]="detailItem.isActive ? 'Active' : 'Inactive'" [severity]="detailItem.isActive ? 'success' : 'danger'" /></div>
+        <div><label class="font-semibold block mb-1">Agent</label><span>{{ detailItem.agentName }}</span></div>
+        <div><label class="font-semibold block mb-1">Created</label><span>{{ detailItem.createdAt | date:'medium' }}</span></div>
+    </div>
+    <ng-template #footer>
+        <button pButton label="View Users" icon="pi pi-users" severity="help" (click)="detailDialogVisible = false; viewUsers(detailItem!)"></button>
+        <button pButton label="Close" icon="pi pi-times" severity="secondary" (click)="detailDialogVisible = false"></button>
+    </ng-template>
+    }
+</p-dialog>
+
+<!-- Create/Edit Dialog -->
+<p-dialog [header]="editMode ? 'Edit Branch' : 'New Branch'" [(visible)]="dialogVisible" [modal]="true" [style]="{ width: '700px' }" [closable]="true">
+    <p-fluid>
+        <div class="grid grid-cols-2 gap-4">
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Branch Name *</label>
+                <input pInputText [(ngModel)]="selectedItem.branchName" placeholder="Branch Name" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Branch Code *</label>
+                <input pInputText [(ngModel)]="selectedItem.branchCode" placeholder="Branch Code" />
+            </div>
+            <div class="flex flex-col gap-2 col-span-2">
+                <label class="font-semibold">Address</label>
+                <input pInputText [(ngModel)]="selectedItem.address" placeholder="Address" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">State</label>
+                <input pInputText [(ngModel)]="selectedItem.state" placeholder="State" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">District</label>
+                <input pInputText [(ngModel)]="selectedItem.district" placeholder="District" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Local Level</label>
+                <input pInputText [(ngModel)]="selectedItem.locallevel" placeholder="Local Level" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Ward Number</label>
+                <p-inputNumber [(ngModel)]="selectedItem.wardNumber" placeholder="Ward No." />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Zipcode</label>
+                <input pInputText [(ngModel)]="selectedItem.zipcode" placeholder="Zipcode" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Contact Person</label>
+                <input pInputText [(ngModel)]="selectedItem.contactPerson" placeholder="Contact Person" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Contact Email</label>
+                <input pInputText [(ngModel)]="selectedItem.contactEmail" placeholder="Contact Email" />
+            </div>
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Contact Phone</label>
+                <input pInputText [(ngModel)]="selectedItem.contactPhone" placeholder="Contact Phone" />
+            </div>
+            @if (editMode) {
+            <div class="flex flex-col gap-2">
+                <label class="font-semibold">Active</label>
+                <p-toggleswitch [(ngModel)]="selectedItem.isActive" />
+            </div>
+            }
+        </div>
+    </p-fluid>
+    <ng-template #footer>
+        <button pButton label="Cancel" icon="pi pi-times" severity="secondary" (click)="dialogVisible = false"></button>
+        <button pButton label="Save" icon="pi pi-check" (click)="saveItem()" [disabled]="!selectedItem.branchName || !selectedItem.branchCode"></button>
+    </ng-template>
+</p-dialog>

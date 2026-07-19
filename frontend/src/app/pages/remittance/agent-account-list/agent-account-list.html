@@ -1,0 +1,229 @@
+<p-toast></p-toast>
+<p-confirmDialog></p-confirmDialog>
+
+<div class="card">
+    <p-toolbar styleClass="mb-6">
+        <ng-template #start>
+            <span class="font-semibold text-xl">Agent Accounts</span>
+        </ng-template>
+        <ng-template #end>
+            <button pButton label="New Account" icon="pi pi-plus" severity="success" (click)="openNew()"></button>
+        </ng-template>
+    </p-toolbar>
+
+    <p-table
+        #dt
+        [value]="accounts"
+        [paginator]="true"
+        [rows]="10"
+        [loading]="loading"
+        [showGridlines]="true"
+        [rowHover]="true"
+        responsiveLayout="scroll"
+        [globalFilterFields]="['agentName', 'accountName', 'accountNumber', 'bankName', 'currencyCode']"
+    >
+        <ng-template pTemplate="caption">
+            <div class="flex justify-between items-center flex-wrap gap-2">
+                <button pButton label="Clear" class="p-button-outlined" icon="pi pi-filter-slash" (click)="clear(dt)"></button>
+                <p-iconfield iconPosition="left">
+                    <p-inputicon><i class="pi pi-search"></i></p-inputicon>
+                    <input #filterInput pInputText type="text" (input)="onGlobalFilter(dt, $event)" placeholder="Search accounts..." />
+                </p-iconfield>
+            </div>
+        </ng-template>
+
+        <ng-template pTemplate="header">
+            <tr>
+                <th pSortableColumn="agentName">Agent <p-sortIcon field="agentName"></p-sortIcon></th>
+                <th pSortableColumn="accountName">Account Name <p-sortIcon field="accountName"></p-sortIcon></th>
+                <th pSortableColumn="accountNumber">Account No. <p-sortIcon field="accountNumber"></p-sortIcon></th>
+                <th pSortableColumn="bankName">Bank <p-sortIcon field="bankName"></p-sortIcon></th>
+                <th pSortableColumn="currencyCode">Currency <p-sortIcon field="currencyCode"></p-sortIcon></th>
+                <th pSortableColumn="balance" class="text-right">Balance <p-sortIcon field="balance"></p-sortIcon></th>
+                <th>Status</th>
+                <th style="min-width: 14rem">Actions</th>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="body" let-item>
+            <tr>
+                <td class="font-semibold">{{ item.agentName }}</td>
+                <td>{{ item.accountName }}</td>
+                <td>{{ item.accountNumber }}</td>
+                <td>{{ item.bankName || '-' }}</td>
+                <td>{{ item.currencyCode }}</td>
+                <td class="text-right font-semibold">{{ item.balance | number:'1.2-2' }}</td>
+                <td>
+                    <p-tag [value]="item.isActive ? 'Active' : 'Inactive'" [severity]="item.isActive ? 'success' : 'danger'"></p-tag>
+                </td>
+                <td>
+                    <div class="flex gap-2">
+                        <button pButton icon="pi pi-eye" class="p-button-rounded p-button-info p-button-sm" pTooltip="View Detail" (click)="viewDetail(item)"></button>
+                        <button pButton icon="pi pi-book" class="p-button-rounded p-button-warning p-button-sm" pTooltip="Statement" (click)="viewStatement(item)"></button>
+                        <button pButton icon="pi pi-pencil" class="p-button-rounded p-button-success p-button-sm" pTooltip="Edit" (click)="editItem(item)"></button>
+                        <button pButton icon="pi pi-trash" class="p-button-rounded p-button-danger p-button-sm" pTooltip="Delete" (click)="deleteItem(item)"></button>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+
+        <ng-template pTemplate="emptymessage">
+            <tr>
+                <td colspan="8" class="text-center py-6">
+                    <div class="flex flex-col items-center gap-2 text-color-secondary">
+                        <i class="pi pi-wallet text-4xl"></i>
+                        <span>No agent accounts found.</span>
+                    </div>
+                </td>
+            </tr>
+        </ng-template>
+    </p-table>
+</div>
+
+<!-- View Detail Dialog -->
+<p-dialog
+    [(visible)]="detailDialogVisible"
+    header="Account Details"
+    [modal]="true"
+    [style]="{ width: '650px' }"
+    [closable]="true"
+>
+    @if (detailItem) {
+    <div class="flex flex-col gap-4 mt-2">
+        <div class="grid grid-cols-2 gap-4">
+            <div>
+                <label class="text-color-secondary text-sm">Agent</label>
+                <p class="font-semibold mt-1">{{ detailItem.agentName }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Account Name</label>
+                <p class="font-semibold mt-1">{{ detailItem.accountName }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Account Number</label>
+                <p class="font-semibold mt-1">{{ detailItem.accountNumber }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Currency</label>
+                <p class="font-semibold mt-1">{{ detailItem.currencyCode }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Bank Name</label>
+                <p class="font-semibold mt-1">{{ detailItem.bankName || '-' }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Bank Branch</label>
+                <p class="font-semibold mt-1">{{ detailItem.bankBranch || '-' }}</p>
+            </div>
+            <div class="col-span-2">
+                <label class="text-color-secondary text-sm">Bank Details (SWIFT/IBAN)</label>
+                <p class="font-semibold mt-1">{{ detailItem.bankDetails || '-' }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Balance</label>
+                <p class="font-semibold mt-1 text-xl">{{ detailItem.currencyCode }} {{ detailItem.balance | number:'1.2-2' }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Status</label>
+                <p class="mt-1"><p-tag [value]="detailItem.isActive ? 'Active' : 'Inactive'" [severity]="detailItem.isActive ? 'success' : 'danger'"></p-tag></p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Created</label>
+                <p class="font-semibold mt-1">{{ detailItem.createdAt | date: 'medium' }}</p>
+            </div>
+            <div>
+                <label class="text-color-secondary text-sm">Updated</label>
+                <p class="font-semibold mt-1">{{ detailItem.updatedAt ? (detailItem.updatedAt | date: 'medium') : '-' }}</p>
+            </div>
+        </div>
+    </div>
+    }
+    <ng-template pTemplate="footer">
+        <button pButton label="Close" icon="pi pi-times" class="p-button-text" (click)="detailDialogVisible = false"></button>
+        <button pButton label="View Statement" icon="pi pi-book" severity="secondary" (click)="detailDialogVisible = false; viewStatement(detailItem!)"></button>
+    </ng-template>
+</p-dialog>
+
+<!-- Create / Edit Dialog -->
+<p-dialog
+    [(visible)]="dialogVisible"
+    [header]="editMode ? 'Edit Account' : 'New Agent Account'"
+    [modal]="true"
+    [style]="{ width: '650px' }"
+    [closable]="true"
+>
+    <p-fluid>
+        <div class="flex flex-col gap-4 mt-2">
+            @if (!editMode) {
+            <div class="flex flex-col gap-2">
+                <label for="agent" class="font-semibold">Agent *</label>
+                <p-select
+                    id="agent"
+                    [options]="agents"
+                    [(ngModel)]="selectedItem.agentId"
+                    optionLabel="name"
+                    optionValue="id"
+                    placeholder="Select Agent"
+                    [filter]="true"
+                    filterPlaceholder="Search agent..."
+                    [appendTo]="'body'"
+                ></p-select>
+            </div>
+            }
+
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="accountName" class="font-semibold">Account Name</label>
+                    <input pInputText id="accountName" [(ngModel)]="selectedItem.accountName" placeholder="Account name" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="accountNumber" class="font-semibold">Account Number</label>
+                    <input pInputText id="accountNumber" [(ngModel)]="selectedItem.accountNumber" placeholder="Account number" />
+                </div>
+            </div>
+
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="bankName" class="font-semibold">Bank Name</label>
+                    <input pInputText id="bankName" [(ngModel)]="selectedItem.bankName" placeholder="Bank name" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="bankBranch" class="font-semibold">Bank Branch</label>
+                    <input pInputText id="bankBranch" [(ngModel)]="selectedItem.bankBranch" placeholder="Branch name" />
+                </div>
+            </div>
+
+            <div class="flex flex-col gap-2">
+                <label for="bankDetails" class="font-semibold">Bank Details (SWIFT/IBAN)</label>
+                <input pInputText id="bankDetails" [(ngModel)]="selectedItem.bankDetails" placeholder="SWIFT, IBAN, routing info..." />
+            </div>
+
+            @if (!editMode) {
+            <div class="flex flex-col md:flex-row gap-4">
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="currencyCode" class="font-semibold">Currency Code *</label>
+                    <input pInputText id="currencyCode" [(ngModel)]="selectedItem.currencyCode" placeholder="e.g. USD, GBP, NPR" />
+                </div>
+                <div class="flex flex-col gap-2 w-full">
+                    <label for="balance" class="font-semibold">Opening Balance</label>
+                    <p-inputNumber id="balance" [(ngModel)]="selectedItem.balance" [minFractionDigits]="2" [maxFractionDigits]="2" mode="decimal"></p-inputNumber>
+                </div>
+            </div>
+            }
+
+            @if (editMode) {
+            <div class="flex items-center gap-2">
+                <p-toggleswitch id="isActive" [(ngModel)]="selectedItem.isActive"></p-toggleswitch>
+                <label for="isActive" class="font-semibold">Active</label>
+            </div>
+            }
+        </div>
+    </p-fluid>
+
+    <ng-template pTemplate="footer">
+        <button pButton label="Cancel" icon="pi pi-times" class="p-button-text" (click)="dialogVisible = false"></button>
+        <button pButton label="Save" icon="pi pi-check" (click)="saveItem()"
+            [disabled]="!editMode && (!selectedItem.agentId || !selectedItem.currencyCode)">
+        </button>
+    </ng-template>
+</p-dialog>

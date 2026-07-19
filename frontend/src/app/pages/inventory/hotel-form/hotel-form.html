@@ -1,0 +1,166 @@
+<p-toast></p-toast>
+
+<p-fluid>
+  <div class="flex flex-col gap-8">
+    <div class="card flex flex-col gap-6">
+      <!-- Title -->
+      <div class="flex items-center gap-3">
+        <button pButton type="button" icon="pi pi-arrow-left" severity="secondary" [outlined]="true" (click)="cancel()" [pTooltip]="'common.back' | translate" tooltipPosition="bottom"></button>
+        <h2 class="text-2xl font-bold m-0">{{ (isEditMode ? 'inventory.editHotel' : 'inventory.addHotel') | translate }}</h2>
+      </div>
+
+      <!-- Page loading spinner -->
+      <div *ngIf="pageLoading" class="flex justify-center items-center py-16">
+        <p-progressSpinner strokeWidth="4" animationDuration=".8s" />
+      </div>
+
+      <form *ngIf="!pageLoading" (ngSubmit)="onSubmit()" #hotelForm="ngForm">
+        <!-- Basic Information Section -->
+        <div>
+          <div class="font-semibold text-xl mb-4">{{ 'inventory.basicInformation' | translate }}</div>
+          
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.hotelName' | translate }} *</label>
+              <input pInputText [(ngModel)]="hotel.name" name="name" required placeholder="Enter hotel name" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.location' | translate }} *</label>
+              <input pInputText [(ngModel)]="hotel.location" name="location" required placeholder="Enter location" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full mb-6">
+            <label>{{ 'inventory.address' | translate }} *</label>
+            <textarea pInputTextarea [(ngModel)]="hotel.address" name="address" required rows="2" placeholder="Enter full address" class="w-full"></textarea>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.contactPerson' | translate }}</label>
+              <input pInputText [(ngModel)]="hotel.contactPerson" name="contactPerson" placeholder="Contact person name" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.phoneNumber' | translate }}</label>
+              <input pInputText [(ngModel)]="hotel.phone" name="phone" placeholder="Phone number" class="w-full" />
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.email' | translate }}</label>
+              <input pInputText [(ngModel)]="hotel.email" name="email" type="email" placeholder="Email address" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col md:flex-row gap-6 mb-6">
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.starRating' | translate }}</label>
+              <p-inputNumber [(ngModel)]="hotel.starRating" name="starRating" [min]="1" [max]="5" [showButtons]="true" class="w-full"></p-inputNumber>
+            </div>
+
+            <div class="flex flex-col gap-2 w-full">
+              <label>{{ 'inventory.category' | translate }}</label>
+              <input pInputText [(ngModel)]="hotel.category" name="category" placeholder="e.g., Luxury, Budget, Boutique" class="w-full" />
+            </div>
+          </div>
+
+          <div class="flex flex-col gap-2 w-full">
+            <label>{{ 'inventory.amenities' | translate }}</label>
+            <input pInputText [(ngModel)]="amenitiesText" name="amenities" [placeholder]="'inventory.enterAmenitiesCommaSeparated' | translate" class="w-full" />
+            <small class="text-muted-color">{{ 'inventory.pressEnterToAdd' | translate }}</small>
+          </div>
+        </div>
+
+        <!-- Divider -->
+        <hr class="my-4">
+
+        <!-- Rooms Section -->
+        <div>
+          <div class="flex justify-between items-center mb-4">
+            <div class="font-semibold text-xl">{{ 'inventory.rooms' | translate }}</div>
+            <div class="flex gap-2">
+              @if (hotel.rooms.length > 0) {
+                <button pButton type="button" label="Expand All" (click)="expandAllRooms()" icon="pi pi-angle-double-down" severity="info" [outlined]="true" size="small"></button>
+                <button pButton type="button" label="Collapse All" (click)="collapseAllRooms()" icon="pi pi-angle-double-up" severity="info" [outlined]="true" size="small"></button>
+              }
+              <button pButton type="button" [label]="'inventory.addRoom' | translate" (click)="addRoom()" icon="pi pi-plus" severity="success"></button>
+            </div>
+          </div>
+
+          @if (hotel.rooms.length === 0) {
+            <div class="text-center text-muted-color py-6">
+              {{ 'inventory.noRoomsAdded' | translate }}
+            </div>
+          }
+
+          <div class="flex flex-col gap-4">
+            @for (room of hotel.rooms; track i; let i = $index) {
+              <div class="room-section" [class.room-collapsed]="collapsedRooms[i]">
+                <!-- Room Header (clickable to toggle) -->
+                <div class="room-header" (click)="toggleRoom(i)">
+                  <div class="flex items-center gap-3">
+                    <span class="room-badge">{{ i + 1 }}</span>
+                    <span class="room-title">{{ 'inventory.room' | translate }} {{ i + 1 }}{{ room.roomType ? ': ' + room.roomType : '' }}</span>
+                    @if (room.capacity) {
+                      <span class="room-info"><i class="pi pi-users"></i> {{ room.capacity }} {{ 'inventory.guests' | translate }}</span>
+                    }
+                    @if (room.totalRooms) {
+                      <span class="room-info"><i class="pi pi-building"></i> {{ room.totalRooms }} {{ 'inventory.units' | translate }}</span>
+                    }
+                  </div>
+                  <div class="flex items-center gap-2">
+                    <button pButton type="button" icon="pi pi-trash" (click)="removeRoom(i); $event.stopPropagation()" severity="danger" [outlined]="true" [rounded]="true" size="small"></button>
+                    <i class="room-toggle-icon pi" [class.pi-chevron-down]="collapsedRooms[i]" [class.pi-chevron-up]="!collapsedRooms[i]"></i>
+                  </div>
+                </div>
+
+                <!-- Room Content (collapsible) -->
+                @if (!collapsedRooms[i]) {
+                  <div class="room-content">
+                    <div class="flex flex-col gap-6">
+                      <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>{{ 'inventory.roomType' | translate }} *</label>
+                          <input pInputText [(ngModel)]="room.roomType" [name]="'roomType_' + i" required placeholder="e.g., Deluxe, Standard, Suite" class="w-full" />
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>{{ 'inventory.capacity' | translate }} *</label>
+                          <p-inputNumber [(ngModel)]="room.capacity" [name]="'capacity_' + i" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col md:flex-row gap-6">
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>{{ 'inventory.totalRooms' | translate }} *</label>
+                          <p-inputNumber [(ngModel)]="room.totalRooms" [name]="'totalRooms_' + i" [min]="1" [showButtons]="true" class="w-full"></p-inputNumber>
+                        </div>
+
+                        <div class="flex flex-col gap-2 w-full">
+                          <label>{{ 'inventory.pricePerNight' | translate }} (USD) *</label>
+                          <p-inputNumber [(ngModel)]="room.pricePerNight" [name]="'pricePerNight_' + i" mode="currency" currency="USD" [min]="0" class="w-full"></p-inputNumber>
+                        </div>
+                      </div>
+
+                      <div class="flex flex-col gap-2 w-full">
+                        <label>{{ 'inventory.features' | translate }}</label>
+                        <input pInputText [(ngModel)]="$any(room).featuresText" [name]="'features_' + i" [placeholder]="'inventory.enterFeaturesCommaSeparated' | translate" class="w-full" />
+                      </div>
+                    </div>
+                  </div>
+                }
+              </div>
+            }
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="flex justify-end gap-2 mt-6">
+          <button pButton type="button" [label]="'common.cancel' | translate" severity="secondary" [outlined]="true" (click)="cancel()"></button>
+          <button pButton type="submit" [label]="'common.save' | translate" [loading]="loading" icon="pi pi-check"></button>
+        </div>
+      </form>
+    </div>
+  </div>
+</p-fluid>
