@@ -1,4 +1,5 @@
-import { Component, OnInit, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, ChangeDetectorRef, DestroyRef } from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { ActivatedRoute, Router } from '@angular/router';
@@ -15,6 +16,7 @@ import { AvatarModule } from 'primeng/avatar';
 import { MessageService } from 'primeng/api';
 import { LeadCrmService, Lead, FollowUp, CreateFollowUpRequest } from '../../../shared/services/lead-crm.service';
 import { ItineraryBuilderService, BuilderListItem } from '../../itinerary-builder/itinerary-builder.service';
+import { ItineraryBuilderDialogService } from '../../itinerary-builder/itinerary-builder-dialog.service';
 import { ProposalService, ProposalListItem } from '../../booking/proposal.service';
 
 @Component({
@@ -832,12 +834,20 @@ export class LeadWorkspace implements OnInit {
         private itineraryService: ItineraryBuilderService,
         private proposalService: ProposalService,
         private messageService: MessageService,
-        private cdr: ChangeDetectorRef
+        private cdr: ChangeDetectorRef,
+        private builderDialog: ItineraryBuilderDialogService,
+        private destroyRef: DestroyRef
     ) {}
 
     ngOnInit() {
         // Reset scroll position (fixes stuck scroll after returning from itinerary builder)
         window.scrollTo(0, 0);
+
+        // Refresh proposals/templates whenever the global itinerary builder dialog is closed
+        this.builderDialog.closed$.pipe(takeUntilDestroyed(this.destroyRef)).subscribe(() => {
+            this.loadProposals();
+            this.loadMasterItineraries();
+        });
 
         const id = +this.route.snapshot.paramMap.get('id')!;
         // Check if a specific tab was requested (e.g. returning from builder)
@@ -909,24 +919,21 @@ export class LeadWorkspace implements OnInit {
     createProposalFromTemplate() {
         if (!this.selectedTemplateId) return;
         this.showProposalPicker = false;
-        // Navigate to itinerary builder with the template pre-loaded + lead context
-        // User can view/edit itinerary, then click "Continue to Proposal"
-        this.router.navigate(['/itinerary-builder', this.selectedTemplateId], {
-            queryParams: { leadId: this.lead.id }
-        });
+        // Open the itinerary builder full-screen, with the template pre-loaded + lead context.
+        // User can view/edit itinerary, then click "Continue to Proposal".
+        this.builderDialog.open({ itineraryId: this.selectedTemplateId, leadId: this.lead.id });
     }
 
     createProposalFromScratch() {
         this.showProposalPicker = false;
-        // Open itinerary builder in lead context (new blank itinerary)
-        this.router.navigate(['/itinerary-builder'], {
-            queryParams: { leadId: this.lead.id }
-        });
+        // Open itinerary builder full-screen in lead context (new blank itinerary)
+        this.builderDialog.open({ leadId: this.lead.id });
     }
 
     goToBuilder() {
         this.showProposalPicker = false;
-        this.router.navigate(['/itinerary-builder']);
+        // Opens a blank master-itinerary template — not tied to this lead
+        this.builderDialog.open();
     }
 
     viewProposal(prop: any) {

@@ -48,6 +48,7 @@ namespace Repository.DataModels.TourAndTravels
         public decimal UnitPrice { get; set; }
         public string Currency { get; set; } = "USD";
         public string? Notes { get; set; }
+        public int? PaxCount { get; set; }
         public DateTime CreatedAt { get; set; }
     }
 }

@@ -47,6 +47,8 @@ namespace Domain.Models.TourAndTravels
             public decimal UnitPrice { get; set; }
             public string Currency { get; set; } = "USD";
             public string? Notes { get; set; }
+            /// <summary>For hotel items: how many pax the unit price covers (used to calculate rooms needed).</summary>
+            public int? PaxCount { get; set; }
         }
 
         // ================================================================
@@ -94,6 +96,8 @@ namespace Domain.Models.TourAndTravels
             public decimal UnitPrice { get; set; }
             public string Currency { get; set; } = "USD";
             public string? Notes { get; set; }
+            /// <summary>For hotel items: how many pax the unit price covers (used to calculate rooms needed).</summary>
+            public int? PaxCount { get; set; }
         }
 
         // ================================================================

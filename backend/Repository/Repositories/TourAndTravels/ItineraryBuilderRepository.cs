@@ -129,7 +129,7 @@ namespace Repository.Repositories.TourAndTravels
             var items = dayIds.Length > 0
                 ? _db.Query<ItineraryDayItemDTO>(@"
                     SELECT id, itinerary_day_id, item_type, inventory_item_id,
-                           item_name, item_details, sort_order, quantity, unit_price, currency, notes
+                           item_name, item_details, sort_order, quantity, unit_price, currency, notes, pax_count
                     FROM itinerary_day_items
                     WHERE itinerary_day_id = ANY(@DayIds)
                     ORDER BY sort_order;",
@@ -171,7 +171,8 @@ namespace Repository.Repositories.TourAndTravels
                         Quantity = i.Quantity,
                         UnitPrice = i.UnitPrice,
                         Currency = i.Currency,
-                        Notes = i.Notes
+                        Notes = i.Notes,
+                        PaxCount = i.PaxCount
                     }).ToList()
                 }).ToList()
             };
@@ -228,10 +229,10 @@ namespace Repository.Repositories.TourAndTravels
                     _db.Execute(@"
                         INSERT INTO itinerary_day_items
                             (itinerary_day_id, item_type, inventory_item_id, item_name,
-                             item_details, sort_order, quantity, unit_price, currency, notes)
+                             item_details, sort_order, quantity, unit_price, currency, notes, pax_count)
                         VALUES
                             (@DayId, @ItemType, @InventoryItemId, @ItemName,
-                             @ItemDetails, @SortOrder, @Quantity, @UnitPrice, @Currency, @Notes);",
+                             @ItemDetails, @SortOrder, @Quantity, @UnitPrice, @Currency, @Notes, @PaxCount);",
                         new
                         {
                             DayId = dayId,
@@ -243,7 +244,8 @@ namespace Repository.Repositories.TourAndTravels
                             item.Quantity,
                             item.UnitPrice,
                             item.Currency,
-                            item.Notes
+                            item.Notes,
+                            item.PaxCount
                         }, tx);
                 }
             }

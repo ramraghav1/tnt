@@ -1,4 +1,4 @@
-import { Component, ChangeDetectorRef, OnInit, OnDestroy } from '@angular/core';
+import { Component, ChangeDetectorRef, OnInit, OnDestroy, Input, Output, EventEmitter, HostBinding } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { Router, ActivatedRoute } from '@angular/router';
@@ -21,7 +21,7 @@ import { MenuModule } from 'primeng/menu';
 
 import {
     ItineraryBuilderService,
-    BuilderDay, BuilderItem, SaveBuilderRequest,
+    BuilderDay, BuilderItem, SaveBuilderRequest, BuilderResponse,
     InventoryVehicle, InventoryActivity, InventoryGuide,
     LocationItem, SeasonItem, CurrencyItem, PricingSummary,
     AccommodationCategory
@@ -55,7 +55,7 @@ import {
 }
 <div class="builder-toolbar">
     <div class="flex items-center gap-3">
-        <button pButton icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="goBack()" pTooltip="Back to list" tooltipPosition="bottom" class="toolbar-back-btn"></button>
+        <button pButton icon="pi pi-arrow-left" severity="secondary" [text]="true" (click)="goBack()" [pTooltip]="dialogMode ? 'Close' : 'Back to list'" tooltipPosition="bottom" class="toolbar-back-btn"></button>
         <div class="toolbar-breadcrumb">
             @if (leadContext) {
             <span class="text-color-secondary text-sm cursor-pointer" (click)="goBack()">Lead Workspace</span>
@@ -458,6 +458,7 @@ import {
     `,
     styles: [`
         :host { display: flex; flex-direction: column; height: calc(100vh - 4.5rem); overflow: hidden; font-family: var(--font-family); }
+        :host.dialog-mode { height: 100%; }
 
         /* ── Lead Context Banner ── */
         .lead-context-banner {
@@ -942,6 +943,18 @@ import {
     `]
 })
 export class ItineraryBuilderComponent implements OnInit, OnDestroy {
+    // ── Embeddable dialog mode (e.g. hosted full-screen from Lead Workspace) ──
+    /** When true, the component behaves as an embedded widget (e.g. inside a p-dialog) instead of a routed page. */
+    @Input() dialogMode = false;
+    /** Itinerary id to load when embedded (equivalent to the `:id` route param). */
+    @Input() embeddedItineraryId: number | null = null;
+    /** Lead id to attribute this itinerary to when embedded (equivalent to the `leadId` query param). */
+    @Input() embeddedLeadId: number | null = null;
+    /** Emitted when the user closes the embedded builder (back button, "Back to Lead", or after a successful save while in lead context). */
+    @Output() closed = new EventEmitter<void>();
+
+    @HostBinding('class.dialog-mode') get isDialogMode(): boolean { return this.dialogMode; }
+
     // ── State ──
     itineraryId: number | null = null;
     itineraryTitle = '';
@@ -953,6 +966,9 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
     sidebarCollapsed = false;
     saving = false;
     selectedDayIndex = 0;
+
+    /** Serialized snapshot of the last-saved state, used to detect unsaved changes (see canDeactivate). */
+    private lastSavedSnapshot = '';
 
     // Lead context (when opened from lead detail)
     leadId: number | null = null;
@@ -1042,29 +1058,47 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
     ) {}
 
     ngOnInit(): void {
-        // Add class to body to signal builder is active (hides footer, adjusts layout)
-        document.body.classList.add('itinerary-builder-active');
+        // Add class to body to signal builder is active (hides footer, adjusts layout).
+        // Not applicable/needed when embedded in a dialog over another page.
+        if (!this.dialogMode) document.body.classList.add('itinerary-builder-active');
 
-        // Check lead context from query params
-        const leadIdParam = this.route.snapshot.queryParams['leadId'];
-        if (leadIdParam) {
-            this.leadId = +leadIdParam;
-            this.leadContext = true;
-        }
-
-        // Check if editing
-        const id = this.route.snapshot.params['id'];
-        if (id) {
-            this.itineraryId = +id;
-            this.loadItinerary(this.itineraryId);
+        if (this.dialogMode) {
+            // Embedded usage: context comes from @Input()s instead of the route.
+            if (this.embeddedLeadId) {
+                this.leadId = this.embeddedLeadId;
+                this.leadContext = true;
+            }
+            if (this.embeddedItineraryId) {
+                this.itineraryId = this.embeddedItineraryId;
+                this.loadItinerary(this.itineraryId);
+            } else {
+                this.addDay();
+                this.markSaved();
+            }
         } else {
-            // Start with one day
-            this.addDay();
+            // Check lead context from query params
+            const leadIdParam = this.route.snapshot.queryParams['leadId'];
+            if (leadIdParam) {
+                this.leadId = +leadIdParam;
+                this.leadContext = true;
+            }
+
+            // Check if editing
+            const id = this.route.snapshot.params['id'];
+            if (id) {
+                this.itineraryId = +id;
+                this.loadItinerary(this.itineraryId);
+            } else {
+                // Start with one day
+                this.addDay();
+                this.markSaved();
+            }
         }
         this.loadInventory();
     }
 
     ngOnDestroy(): void {
+        if (this.dialogMode) return;
         // Remove the builder-active class and restore normal layout
         document.body.classList.remove('itinerary-builder-active');
         // Scroll to top so next page isn't stuck
@@ -1124,22 +1158,30 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
 
     // ── Load existing itinerary ──
     loadItinerary(id: number): void {
-        this.svc.getById(id).subscribe(data => {
-            this.itineraryTitle = data.title;
-            this.defaultCurrency = data.defaultCurrency || 'USD';
-            this.selectedSeasonId = data.seasonId ?? null;
-            this.markupPercentage = data.markupPercentage || 15;
-            this.numPax = data.numPax || 2;
-            this.days = data.days.map(d => ({
-                ...d,
-                accommodationCategoryId: (d as any).accommodationCategoryId ?? undefined,
-                accommodationCategoryName: (d as any).accommodationCategoryName ?? undefined,
-                items: d.items.map(i => ({ ...i })),
-                expanded: true,
-                showNotes: !!d.notes
-            }));
-            this.recalcPricing();
-            this.cdr.markForCheck();
+        this.svc.getById(id).subscribe({
+            next: data => {
+                this.itineraryTitle = data.title;
+                this.defaultCurrency = data.defaultCurrency || 'USD';
+                this.selectedSeasonId = data.seasonId ?? null;
+                this.markupPercentage = data.markupPercentage || 15;
+                this.numPax = data.numPax || 2;
+                this.days = data.days.map(d => ({
+                    ...d,
+                    accommodationCategoryId: (d as any).accommodationCategoryId ?? undefined,
+                    accommodationCategoryName: (d as any).accommodationCategoryName ?? undefined,
+                    items: d.items.map(i => ({ ...i })),
+                    expanded: true,
+                    showNotes: !!d.notes
+                }));
+                this.recalcPricing();
+                this.markSaved();
+                this.cdr.markForCheck();
+            },
+            error: () => {
+                this.msg.add({ severity: 'error', summary: 'Error', detail: 'Failed to load itinerary. It may have been deleted or you may not have access.' });
+                this.cdr.markForCheck();
+                setTimeout(() => this.goBack(), 1500);
+            }
         });
     }
 
@@ -1438,7 +1480,7 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
             defaultCurrency: this.defaultCurrency,
             seasonId: this.selectedSeasonId ?? undefined,
             markupPercentage: this.markupPercentage,
-            numPax: this.numPax,
+            numPax: this.numPax > 0 ? this.numPax : 2,
             status,
             days: this.days.map(d => ({
                 dayNumber: d.dayNumber,
@@ -1456,19 +1498,40 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
                     quantity: i.quantity,
                     unitPrice: i.unitPrice,
                     currency: i.currency || this.defaultCurrency,
-                    notes: i.notes
+                    notes: i.notes,
+                    paxCount: i.paxCount
                 }))
             }))
         };
     }
 
-    saveDraft(): void {
+    /** Snapshot of the persisted state, excluding `status` (draft vs published doesn't count as a "change"). */
+    private snapshot(): string {
+        const { status, ...rest } = this.buildRequest('draft');
+        return JSON.stringify(rest);
+    }
+
+    /** Marks the current state as the saved baseline for unsaved-changes detection. */
+    private markSaved(): void {
+        this.lastSavedSnapshot = this.snapshot();
+    }
+
+    /** Whether the builder has edits that haven't been persisted yet. Used by the unsaved-changes route guard. */
+    hasUnsavedChanges(): boolean {
+        return this.snapshot() !== this.lastSavedSnapshot;
+    }
+
+    /**
+     * Shared save/publish flow — saveDraft(), publish() and continueToProposal() only differ
+     * in the status they persist and what happens after a successful save.
+     */
+    private submit(status: string, onSuccess: (res: BuilderResponse) => void, failureMessage: string): void {
         if (!this.itineraryTitle) {
             this.msg.add({ severity: 'warn', summary: 'Required', detail: 'Please enter an itinerary name' });
             return;
         }
         this.saving = true;
-        const req = this.buildRequest('draft');
+        const req = this.buildRequest(status);
 
         const obs = this.itineraryId
             ? this.svc.update(this.itineraryId, req)
@@ -1478,48 +1541,34 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
             next: res => {
                 this.itineraryId = res.id;
                 this.saving = false;
-                this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Draft saved successfully' });
+                this.markSaved();
                 this.cdr.markForCheck();
-                if (this.leadContext && this.leadId) {
-                    setTimeout(() => this.goBackToLead(), 1200);
-                }
+                onSuccess(res);
             },
             error: () => {
                 this.saving = false;
-                this.msg.add({ severity: 'error', summary: 'Error', detail: 'Failed to save' });
+                this.msg.add({ severity: 'error', summary: 'Error', detail: failureMessage });
                 this.cdr.markForCheck();
             }
         });
     }
 
-    publish(): void {
-        if (!this.itineraryTitle) {
-            this.msg.add({ severity: 'warn', summary: 'Required', detail: 'Please enter an itinerary name' });
-            return;
-        }
-        this.saving = true;
-        const req = this.buildRequest('published');
-
-        const obs = this.itineraryId
-            ? this.svc.update(this.itineraryId, req)
-            : this.svc.save(req);
-
-        obs.subscribe({
-            next: res => {
-                this.itineraryId = res.id;
-                this.saving = false;
-                this.msg.add({ severity: 'success', summary: 'Published', detail: 'Itinerary published!' });
-                this.cdr.markForCheck();
-                if (this.leadContext && this.leadId) {
-                    setTimeout(() => this.goBackToLead(), 1200);
-                }
-            },
-            error: () => {
-                this.saving = false;
-                this.msg.add({ severity: 'error', summary: 'Error', detail: 'Failed to publish' });
-                this.cdr.markForCheck();
+    saveDraft(): void {
+        this.submit('draft', () => {
+            this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Draft saved successfully' });
+            if (this.leadContext && this.leadId) {
+                setTimeout(() => this.goBackToLead(), 1200);
             }
-        });
+        }, 'Failed to save');
+    }
+
+    publish(): void {
+        this.submit('published', () => {
+            this.msg.add({ severity: 'success', summary: 'Published', detail: 'Itinerary published!' });
+            if (this.leadContext && this.leadId) {
+                setTimeout(() => this.goBackToLead(), 1200);
+            }
+        }, 'Failed to publish');
     }
 
     preview(): void {
@@ -1528,36 +1577,15 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
 
     // ── Continue to Proposal (lead context) ──
     continueToProposal(): void {
-        if (!this.itineraryTitle) {
-            this.msg.add({ severity: 'warn', summary: 'Required', detail: 'Please enter an itinerary name' });
-            return;
-        }
-        this.saving = true;
-        const req = this.buildRequest('published');
-
-        const obs = this.itineraryId
-            ? this.svc.update(this.itineraryId, req)
-            : this.svc.save(req);
-
-        obs.subscribe({
-            next: res => {
-                this.itineraryId = res.id;
-                this.saving = false;
-                this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Itinerary saved. Redirecting to proposal...' });
-                this.cdr.markForCheck();
-                // Navigate to proposal-customize with itinerary + lead context
-                setTimeout(() => {
-                    this.router.navigate(['/proposal-customize', res.id], {
-                        queryParams: { leadId: this.leadId }
-                    });
-                }, 800);
-            },
-            error: () => {
-                this.saving = false;
-                this.msg.add({ severity: 'error', summary: 'Error', detail: 'Failed to save itinerary' });
-                this.cdr.markForCheck();
-            }
-        });
+        this.submit('published', res => {
+            this.msg.add({ severity: 'success', summary: 'Saved', detail: 'Itinerary saved. Redirecting to proposal...' });
+            // Navigate to proposal-customize with itinerary + lead context
+            setTimeout(() => {
+                this.router.navigate(['/proposal-customize', res.id], {
+                    queryParams: { leadId: this.leadId }
+                });
+            }, 800);
+        }, 'Failed to save itinerary');
     }
 
     // ── Quick Actions ──
@@ -1582,6 +1610,10 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
     }
 
     goBack(): void {
+        if (this.dialogMode) {
+            this.requestClose();
+            return;
+        }
         if (this.leadContext && this.leadId) {
             this.goBackToLead();
         } else {
@@ -1590,8 +1622,27 @@ export class ItineraryBuilderComponent implements OnInit, OnDestroy {
     }
 
     goBackToLead(): void {
+        if (this.dialogMode) {
+            this.requestClose();
+            return;
+        }
         if (this.leadId) {
             this.router.navigate(['/sales/leads', this.leadId], { queryParams: { tab: 'proposals' } });
         }
     }
+
+    /** Closes the embedded builder (dialog mode only), confirming first if there are unsaved changes. */
+    requestClose(): void {
+        if (this.hasUnsavedChanges() && !window.confirm('You have unsaved changes. Close and discard them?')) {
+            return;
+        }
+        this.closed.emit();
+    }
+
+    // ── Unsaved changes guard hook (see unsaved-changes.guard.ts) ──
+    canDeactivate(): boolean {
+        if (!this.hasUnsavedChanges()) return true;
+        return window.confirm('You have unsaved changes. Leave this page and discard them?');
+    }
 }
+

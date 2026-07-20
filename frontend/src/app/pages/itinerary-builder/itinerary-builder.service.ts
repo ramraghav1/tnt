@@ -61,6 +61,8 @@ export interface SaveBuilderRequest {
             unitPrice: number;
             currency: string;
             notes?: string;
+            /** For hotel items: how many pax the unit price covers (used to calculate rooms needed) */
+            paxCount?: number;
         }[];
     }[];
 }
@@ -98,6 +100,8 @@ export interface BuilderResponse {
             unitPrice: number;
             currency: string;
             notes?: string;
+            /** For hotel items: how many pax the unit price covers (used to calculate rooms needed) */
+            paxCount?: number;
         }[];
     }[];
 }

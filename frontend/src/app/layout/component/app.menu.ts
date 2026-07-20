@@ -47,7 +47,7 @@ export class AppMenu {
                     { label: 'Proposals', icon: 'pi pi-fw pi-send', routerLink: ['/proposals'] },
                     { label: 'Customize Itinerary', icon: 'pi pi-fw pi-sliders-h', routerLink: ['/customize-itinerary-list'] },
                     { label: 'Itinerary Templates', icon: 'pi pi-fw pi-map', routerLink: ['/itinerary-list'] },
-                    { label: 'Itinerary Builder', icon: 'pi pi-fw pi-objects-column', routerLink: ['/itinerary-builder'] },
+                    { label: 'Itinerary Builder', icon: 'pi pi-fw pi-objects-column', routerLink: ['/itinerary-builder-list'] },
                 ]
             },
             'Quotations': {

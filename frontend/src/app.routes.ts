@@ -90,6 +90,7 @@ import { TntVoucherList } from './app/pages/documents/voucher-list/voucher-list'
 import { DocumentDownloads } from './app/pages/documents/downloads/downloads';
 import { TntReports } from './app/pages/reports/reports';
 import { authGuard } from './app/auth.guard';
+import { unsavedChangesGuard } from './app/pages/itinerary-builder/unsaved-changes.guard';
 
 export const appRoutes: Routes = [
     { path: '', redirectTo: 'login', pathMatch: 'full' },
@@ -106,8 +107,9 @@ export const appRoutes: Routes = [
             { path: 'userlist', component: Userlist },
             { path: 'add-itinerary', component: AddItinerary },
             { path: 'itinerary-list', component: ItineraryList },
-            { path: 'itinerary-builder', loadComponent: () => import('./app/pages/itinerary-builder/itinerary-builder.component').then(m => m.ItineraryBuilderComponent) },
-            { path: 'itinerary-builder/:id', loadComponent: () => import('./app/pages/itinerary-builder/itinerary-builder.component').then(m => m.ItineraryBuilderComponent) },
+            { path: 'itinerary-builder', loadComponent: () => import('./app/pages/itinerary-builder/itinerary-builder.component').then(m => m.ItineraryBuilderComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'itinerary-builder/:id', loadComponent: () => import('./app/pages/itinerary-builder/itinerary-builder.component').then(m => m.ItineraryBuilderComponent), canDeactivate: [unsavedChangesGuard] },
+            { path: 'itinerary-builder-list', loadComponent: () => import('./app/pages/itinerary-builder/itinerary-master-list.component').then(m => m.ItineraryMasterList) },
             { path: 'send-transaction', component: SendTransaction },
             { path: 'transaction-report', loadComponent: () => import('./app/pages/remittance/transaction-report/transaction-report').then(m => m.TransactionReport) },
             { path: 'itinerary-details/:id', component: ItineraryDetailsComponent },
